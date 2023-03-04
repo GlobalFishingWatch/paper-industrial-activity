@@ -1,0 +1,29 @@
+# Params
+name: convnext_mixed
+epochs: 300
+tile_size: 100
+batch_size: 64
+monitor: val_loss
+patience: 1000
+smooth: 0
+augment: false
+normalize: true
+shuffle: true
+weight: false
+layer_scale: true
+drop_path: false
+
+# Data
+data: gs://scratch_fernando/feature_tiles_v1.zarr
+split: train/0
+index: ${data}.index/${split}
+
+# Dirs
+run_dir: ???
+src_dir: ???
+
+# Outputs
+model: ${run_dir}/model
+weights: ${run_dir}/weights
+history: ${run_dir}/history.csv
+inference: ${run_dir}/inference.csv

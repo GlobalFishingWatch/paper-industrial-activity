@@ -1,0 +1,67 @@
+CREATE TEMP FUNCTION one_over_cellsize() AS ({{ one_over_cellsize }});
+--
+--
+WITH
+
+  source_table as (
+  select * from 
+  `{{ footrpint_vector_table_day }}`
+  where safe.ST_GEOGFROMTEXT(scene_wkt) is not null
+  -- and id = 'S1A_IW_GRDH_1SDV_20190819T100812_20190819T100841_028636_033D7A_13A9'
+  ),
+
+    --
+    --
+  lat_array AS(
+  SELECT
+    id,
+    lat + .5/one_over_cellsize() as lat  -- to get the middle of the cell
+  FROM
+    source_table
+  CROSS JOIN
+    UNNEST(GENERATE_ARRAY(FLOOR(min_lat*one_over_cellsize())/one_over_cellsize(), 
+    FLOOR(max_lat*one_over_cellsize())/one_over_cellsize(), 1/one_over_cellsize())) AS lat),
+    --
+    --
+  lon_array AS (
+  SELECT
+    id,
+    lon + .5/one_over_cellsize() as lon -- to get the middle of the cell
+  FROM
+    source_table
+  CROSS JOIN
+    UNNEST(GENERATE_ARRAY(FLOOR(min_lon*one_over_cellsize())/one_over_cellsize(), 
+    FLOOR(max_lon*one_over_cellsize())/one_over_cellsize(), 1/one_over_cellsize())) AS lon),
+  id_lat_lon_array AS (
+  SELECT
+    a.id id,
+    a.lon lon,
+    b.lat lat
+  FROM
+    lon_array a
+  CROSS JOIN
+    lat_array b
+  WHERE
+    a.id=b.id)
+    --
+    --
+    --
+SELECT
+  FLOOR(lat*one_over_cellsize()) AS lat_bin,
+  FLOOR(lon*one_over_cellsize()) AS lon_bin,
+  id as scene_id
+FROM
+  id_lat_lon_array
+JOIN (
+  SELECT
+    id,
+    scene_wkt
+  FROM
+    source_table)
+USING
+  (id)
+WHERE
+  ST_CONTAINS(ST_GEOGFROMTEXT(scene_wkt),
+    ST_GEOGPOINT(lon,
+      lat))
+

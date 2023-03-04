@@ -1,0 +1,16 @@
+num_cpus: 1
+project_id: project-id
+dataset: proj_sentinel1_v20200820
+subbucket: 20m_14x17x_200i_600o_60d_ns
+asset_dir: assets
+vi_table: gfw_research.vi_ssvid_v20200801
+vms_tables:
+  - pipe_panama_production_v20200331
+  - pipe_peru_production_v20200324
+  - pipe_mexico_production_v20190912
+  - pipe_namibia_production_v20190207
+  - pipe_chile_production_v20200331
+  - pipe_indonesia_production_v20200320
+date_range:
+  - 2018-01-01
+  - 2018-03-13

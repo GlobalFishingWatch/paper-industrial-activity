@@ -1,0 +1,28 @@
+# Params
+name: model2
+cycles: 3
+groups: 32
+epochs: 300
+base_filters: 96
+tile_size: 80
+batch_size: 16
+monitor: val_loss
+patience: 1000
+augment: true
+shuffle: true
+weight: false
+
+# Data
+data: gs://scratch_fernando/detection_tiles_v3.zarr
+split: train/0
+index: ${data}.index/${split}
+
+# Dirs
+run_dir: ???
+src_dir: ???
+
+# Outputs
+model: ${run_dir}/model
+weights: ${run_dir}/weights
+history: ${run_dir}/history.csv
+inference: ${run_dir}/inference.csv

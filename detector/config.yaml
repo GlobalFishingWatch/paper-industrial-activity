@@ -1,0 +1,162 @@
+# Default parameters used by the Detector class.
+# They can all be overwritten by passing as arguments to Detector.
+
+# The suffix is added to subbucket name (unique identifier for the run).
+suffix: ''
+
+collection: COPERNICUS/S1_GRD
+
+# S1A | S1B | S1AB
+satellite: S1AB
+
+# A | D | AD
+orbit: AD
+
+thresholdx: 0
+
+resolution: 20
+
+window_inner: 200
+
+window_outer: 600
+
+# time interval for composite (date1, date2)
+window_date: []
+
+days_to_process: 1
+
+date: '2019-07-16'
+
+include_stats: false
+
+use_seive: false
+
+reducer: median
+
+comp_suffix: ''
+
+min_num_images: 5
+
+max_num_images: 100
+
+tile_dx: null
+
+tile_dy: null
+
+dialation_radius: 60
+
+# Project to use with Google services (GCS, BQ)
+
+project_id: project-id
+
+# Suffix for BQ's root data storage (project_bq_version)
+
+dataset_prefix: proj_sentinel1_
+
+# Prefix for BQ table name: table_prefix_YYYYMMDD
+
+table_prefix: ''
+
+# Bucket in GCS to upload detections
+
+bucket: gfw-sentinel-1-detections
+
+# Bucket in bigquery where the data is stored. Don't change this!
+
+version: v20210924
+
+# Subbucket: key "directory" under GCS bucket
+# if empty, it gets created with above params in the name
+subbucket: ''
+
+# The vessel info table for matching detections
+
+vi_table: gfw_research.vi_ssvid_v20200801
+
+# The AIS table for matching detections
+
+ais_table: null
+
+# The VMS tables for matching detections
+
+vms_tables:
+  - pipe_panama_production_v20200331
+  - pipe_peru_production_v20200324
+  - pipe_mexico_production_v20190912
+  - pipe_namibia_production_v20190207
+  - pipe_chile_production_v20200331
+  - pipe_indonesia_production_v20200320
+
+# Local folder to store data (e.g. detections from GCS)
+
+data_dir: data
+
+# Local folder to store assest (e.g. jinja2, SQL)
+
+asset_dir: assets
+
+# Local folder to store parameters and failed task logs
+
+run_dir: runs
+
+# Prefix for parameter and scene log JSON files
+
+param_prefix: PARAMS_
+
+log_prefix: SCENES_
+
+# Ocean polygon to identify SAR scenes that touch the ocean
+
+ocean_vector_uri: users/brianwong-gfw/ikea/ne_110m_ocean
+
+# Ocean raster for masking usage on per scene basis
+
+ocean_raster_uri: users/brianwong-gfw/ikea/olr/ocean-land-mask-100m-v20190514
+
+# Buffer shoreline with 1, 2, 3... (km)
+
+shore_buffer: 1
+
+# Generate and export detection footprints (m)
+
+foot_buffer: 500
+
+foot_scale: 500
+
+foot_percentile: 1
+
+foot_usevv: false
+
+# Use single scene for test run
+# If both 'the_date' and 'scene_id' are defined, it gives priority to scene_id
+
+scene_id: null
+  # S1A_IW_GRDH_1SDV_20170910T223314_20170910T223339_018319_01ED20_6321  # lots of vessels
+
+# Geometry to clip scene (leave empty for full scene)
+# It can be copied 'as is' from the JS GUI and pasted here.
+
+region_id: null
+
+region: null
+#    [    # for img 9A36
+#         [-24.237718152863483, 65.18916351936846],
+#         [-24.237718152863483, 64.63366996996768],
+#         [-22.952317762238486, 64.63366996996768],
+#         [-22.952317762238486, 65.18916351936846],
+#    ]
+#
+#   [    # for img BE09
+#        [-157.496489437479, 58.87201830307525],
+#        [-157.496489437479, 58.53960864360592],
+#        [-156.97738543357275, 58.53960864360592],
+#        [-156.97738543357275, 58.87201830307525],
+#    ]
+
+# Step in the pipeline. As params files get upload,
+# matched and evaluated these get updated.
+
+is_invalid: false
+is_uploaded: false
+is_matched: false
+is_evaluated: false

@@ -1,0 +1,188 @@
+
+ 
+CREATE TEMP FUNCTION one_over_cellsize() AS ({{ one_over_cellsize }});
+
+CREATE TEMP FUNCTION toDAY() AS (DATE('{{ YYYY_MM_DD }}'));
+
+CREATE TEMP FUNCTION YYYYMMDD(d DATE) AS (
+  # Format a date as YYYYMMDD
+  # e.g. DATE('2018-01-01') => '20180101'
+  FORMAT_DATE('%Y%m%d',
+    d) );
+
+
+create temp function degrees(x float64) as (
+    x * 180 / 3.14159265359
+);
+
+--
+--
+
+
+--
+--
+WITH
+
+
+  
+  scenes as (  select *, st_buffer(ST_GEOGFROMTEXT(footprint_wkt, make_valid=>True),250) as footprint_geo 
+   from
+     (select *, row_number() over (partition by scene_id order by rand()) row
+    from `{{ footrpint_vector_table }}*`
+  where _table_suffix = YYYYMMDD(toDAY()) ) 
+     where row = 1
+     and safe.ST_GEOGFROMTEXT(footprint_wkt, make_valid=>True) is not null
+     ),
+
+
+  sat_positions as (select * from
+     `project-id.satellite_positions_v20190208.sentinel_1_positions*`
+  where _table_suffix = YYYYMMDD(toDAY()) ),
+
+  source_table_distinct as (
+  select *,
+  ST_BOUNDINGBOX(footprint_geo) bbox
+   from 
+  scenes
+  ),
+
+  source_table as (
+  select *, 
+    bbox.xmin as min_lon, bbox.xmax as max_lon,
+    bbox.ymin as min_lat, bbox.ymax as max_lat
+  from 
+    source_table_distinct
+  ),
+
+
+    --
+    --
+  lat_array AS(
+  SELECT
+    scene_id,
+    lat + .5/one_over_cellsize() as lat  -- to get the middle of the cell
+  FROM
+    source_table
+  CROSS JOIN
+    UNNEST(GENERATE_ARRAY(FLOOR(min_lat*one_over_cellsize())/one_over_cellsize(), 
+    FLOOR(max_lat*one_over_cellsize())/one_over_cellsize(), 1/one_over_cellsize())) AS lat),
+    --
+    --
+  lon_array AS (
+  SELECT
+    scene_id,
+    lon + .5/one_over_cellsize() as lon -- to get the middle of the cell
+  FROM
+    source_table
+  CROSS JOIN
+    UNNEST(GENERATE_ARRAY(FLOOR(min_lon*one_over_cellsize())/one_over_cellsize(), 
+    FLOOR(max_lon*one_over_cellsize())/one_over_cellsize(), 1/one_over_cellsize())) AS lon),
+  id_lat_lon_array AS (
+  SELECT
+    a.scene_id scene_id,
+    a.lon lon,
+    b.lat lat
+  FROM
+    lon_array a
+  CROSS JOIN
+    lat_array b
+  WHERE
+    a.scene_id=b.scene_id),
+    --
+    --
+    --
+    
+rasterized as (
+SELECT
+  cast(FLOOR(lat*one_over_cellsize()) as int64) AS lat_index,
+  cast(FLOOR(lon*one_over_cellsize()) as int64) AS lon_index,
+  ST_GEOGPOINT(lon,
+      lat) as center_point,
+  scene_id
+FROM
+  id_lat_lon_array
+JOIN (
+  SELECT
+    scene_id,
+    footprint_geo 
+  FROM
+    source_table)
+USING
+  (scene_id)
+WHERE
+  ST_CONTAINS(footprint_geo,
+    ST_GEOGPOINT(lon,
+      lat))),
+      
+     
+
+-- the position of the satellite 30 seconds before the scene timestamp
+start_pos AS (
+    SELECT
+         scene_id,
+         lat AS start_lat,
+         lon AS start_lon,
+         altitude AS start_altitude,
+         start_time
+    FROM sat_positions a
+    JOIN scenes b
+          ON
+        timestamp_trunc(start_time,second) = time
+        AND upper(SUBSTR(b.scene_id, 2, 2)) = upper(a.sat) -- two satellites, make sure it is the right one
+),
+
+-- end position of the satellite 30 seconds after the scene timestamp
+end_pos AS (
+    SELECT
+         scene_id,
+         lat AS end_lat,
+         lon AS end_lon,
+         altitude AS end_altitude,
+          end_time
+    FROM sat_positions a
+    JOIN scenes b
+          ON
+        timestamp_trunc(end_time,second) = time
+        AND upper(SUBSTR(b.scene_id, 2, 2)) = upper(a.sat) -- two satellites, make sure it is the right one
+),
+
+
+-- calcuate the location, and altitude of the satellite
+sat_directions AS (
+    SELECT
+         scene_id,
+         -- start_lat AS sat_start_lat,
+         -- start_lon AS sat_start_lon,
+         start_lat>end_lat as descending,
+         start_altitude/2 + end_altitude/2 as sat_altitude,
+         -- sat course, measured clockwise from due north, in degrees
+         ST_MAKELINE(
+                safe.ST_GEOGPOINT(start_lon, start_lat),
+                (safe.ST_GEOGPOINT(end_lon, end_lat) )
+            ) sat_line
+--     end_lat / 2 + start_lat / 2 AS avg_lat
+    FROM end_pos
+    JOIN
+         start_pos
+         USING (scene_id)
+),
+
+final_table as 
+
+(
+  select 
+  scene_id,
+  lat_index,
+  lon_index,
+  degrees(
+    atan2( st_distance(sat_line, center_point),
+        sat_altitude)) * if(descending,-1,1) look_angle
+  from 
+  rasterized
+  join
+  sat_directions
+  using(scene_id)
+)
+
+      
+select * from final_table

@@ -1,0 +1,267 @@
+
+CREATE TEMP FUNCTION today() AS (DATE('{{ thedate }}'));
+CREATE TEMP FUNCTION yesterday() AS (DATE_SUB(today(), INTERVAL 1 DAY));
+CREATE TEMP FUNCTION tomorrow() AS (DATE_ADD(today(), INTERVAL 1 DAY));
+ # Define some utility functions to make thinks more readable
+CREATE TEMP FUNCTION YYYYMMDD(d DATE) AS (
+    # Format a date as YYYYMMDD
+    # e.g. DATE('2018-01-01') => '20180101'
+    FORMAT_DATE('%Y%m%d',
+      d) );
+
+
+CREATE TEMP FUNCTION weight_average_lons(lon float64, lon2 float64, timeto int64, timeto2 int64) AS 
+( 
+  # Make sure that lon < 180 and > -180, and that we average across the dateline
+  # appropriately
+case 
+when lon - lon2 > 350 then ( (lon-360)*timeto2 + lon2*timeto)/(timeto+timeto2) 
+when lon - lon2 < -350 then ( (lon+360)*timeto2 + lon2*timeto)/(timeto+timeto2) 
+else (lon*timeto2 + lon2*timeto)/(timeto+timeto2) end );
+
+CREATE TEMP FUNCTION reasonable_lon(lon float64) AS 
+(case when lon > 180 then lon - 360
+when lon < -180 then lon + 360
+else lon end
+);
+
+
+with 
+--
+--
+ good_extents as (  select *,  
+    {{image_time_query}} as image_time from
+ `{{ footprint_vector_table }}*`
+ where 
+  Safe.ST_GeogFromText(scene_wkt) is not null and 
+ _table_suffix = YYYYMMDD(today())
+ ),
+
+--
+position_table as (select * except(speed_knots), 
+speed_knots as speed from  gfw_research.pipe_v20201001
+          WHERE
+            date(_partitiontime) BETWEEN yesterday()
+            AND tomorrow()
+            AND seg_id IN (
+            SELECT
+              seg_id
+            FROM
+              `project-id.gfw_research.pipe_v20201001_segs`
+            WHERE
+              good_seg)),
+--
+--
+leaded_positions as (
+          SELECT
+            ssvid,
+            lat,
+            LEAD(lat,1) OVER (PARTITION BY seg_id ORDER BY timestamp) lat2,
+            lon,
+            LEAD(lon,1) OVER (PARTITION BY seg_id ORDER BY timestamp) lon2,
+            timestamp,
+            LEAD(timestamp,1) OVER (PARTITION BY seg_id ORDER BY timestamp) timestamp2,
+            speed,
+            LEAD(speed,1) OVER (PARTITION BY seg_id ORDER BY timestamp) speed2,
+            course,
+            LEAD(course,1) OVER (PARTITION BY seg_id ORDER BY timestamp) course2
+          FROM
+            position_table ),
+--
+--
+-- This is a bit cumbersome... getting the lagged positions and only take the ones that are null. 
+lagged_positions as (
+          SELECT
+            ssvid,
+            null as lat,
+            lat as lat2,
+            null as lon,
+            lon as lon2,
+            lag(timestamp,1) OVER (PARTITION BY seg_id ORDER BY timestamp) timestamp,
+            timestamp as timestamp2,
+            null as speed,
+            speed as speed2,
+            null as course,
+            course as course2
+          FROM
+            position_table 
+),
+--
+--
+-- Throw away lags except where the previous point
+-- is null, which means it is at the start of the segment
+seg_starts as (
+ select * from lagged_positions 
+ where timestamp is null
+),
+--
+-- Union the leaded positions with the started segments
+-- This way we get the start of segments
+-- as well as just the end
+leaded_position_with_segstart as (
+select * from leaded_positions 
+union all
+select * from seg_starts
+),
+
+--
+--
+candidate_positions as (
+
+
+        SELECT
+         min_lon, min_lat, max_lon, max_lat, 
+          timestamp_diff(timestamp2,
+            image_time,
+            SECOND) timeto2,
+          timestamp_diff(image_time,
+            timestamp,
+            SECOND) timeto,
+          timestamp,
+          timestamp2,
+          lat,
+          lat2,
+          lon,
+          lon2,
+          speed,
+          speed2,
+          course,
+          course2,
+          id,
+          scene_wkt,
+          scene_wkt_5km_in,
+          image_time,
+          ssvid
+        FROM 
+        leaded_position_with_segstart
+        a
+        CROSS JOIN
+         good_extents b
+        WHERE
+          -- This whear statement looks for all points within a bounding box
+          -- that are also just before or just after.
+          -- Note that there is no time limit
+          --
+          ( -- lat and lon are within 120 nautical miles of the bounding box
+            (lat > min_lat - 2 -- About 120 nautical miles away
+            AND lat < max_lat + 2 -- About 120 nautical miles away
+            AND lon > min_lon - 2/cos(3.14/180 * ifnull(lat2,lat)) -- About 120 nautical miles away
+            AND lon < max_lon + 2/cos(3.14/180 * ifnull(lat2,lat)) -- About 120 nautical miles away)
+            ) 
+            OR 
+            (
+             -- lat2 and lon2 are within 120 nautical miles of the bounding box
+             lat2 > min_lat - 2 -- About 120 nautical miles away
+             AND lat2 < max_lat + 2 -- About 120 nautical miles away
+             AND lon2 > min_lon - 2/cos(3.14/180 * ifnull(lat2,lat)) -- About 120 nautical miles away
+             AND lon2 < max_lon + 2/cos(3.14/180 * ifnull(lat2,lat)) -- About 120 nautical miles away
+            )
+          )
+          AND 
+          ( -- The position is just before or after the ping
+            ( -- case one, both exist
+               (timestamp < image_time
+               AND timestamp2 >= image_time ) 
+               -- case two, only the second position exists
+               -- because the position is at the start of a seg
+            ) or
+            ( timestamp2 is null
+               and timestamp < image_time)
+            -- case three, only the first position exists
+            -- because the position is at the end of a seg
+            or (timestamp is null 
+            AND timestamp2 >= image_time)
+            )
+          ),
+--
+--
+interpolated_positions as (
+      SELECT
+        (lat*timeto2 + lat2*timeto)/(timeto+timeto2) lat_center,
+        reasonable_lon(weight_average_lons(lon, lon2, timeto, timeto2)) lon_center,
+        lat + cos(course*3.14/180) -- x component
+        *speed*timeto/60/60 -- nautical miles traveled at speed in time
+        /(60) -- divided by the nautical miles per degree lon,
+        -- which is 60 t
+        as lat_interpolate,
+        reasonable_lon( 
+           lon + sin(course*3.14/180) -- y component
+           *speed*timeto/60/60 -- nautical miles traveled at speed in time
+           /(60/cos(ifnull(lat,lat2)*3.14/180))) -- divided by the nautical miles per degree lon,
+        -- which is 60 divided by cos of the lat
+        as lon_interpolate,
+        -- Now the same for lat 2 and lon 2 -- note that these are subtracted
+        -- because it is the opposite course to extrapolate backward
+        lat2 - cos(course2*3.14/180) -- x component
+        *speed2*timeto2/60/60 -- nautical miles traveled at speed in time
+        /(60) -- divided by the nautical miles per degree lon,
+        -- which is 60 
+        as lat_interpolate2,
+        reasonable_lon(lon2 - sin(course2*3.14/180) -- y component
+        *speed2*timeto2/60/60 -- nautical miles traveled at speed in time
+        /(60/cos(ifnull(lat2,lat)*3.14/180))) -- divided by the nautical miles per degree latitude, which is 60 
+        -- divided by the cos of lat
+        as lon_interpolate2,
+        *
+      FROM candidate_positions),
+
+
+
+close_to_scene as (
+SELECT
+      ssvid,
+      lat_center,
+      lon_center,
+      lat_interpolate, 
+      lon_interpolate,
+      lat_interpolate2, 
+      lon_interpolate2,
+      timeto2,
+      timeto,
+      timestamp,
+      timestamp2,
+      image_time,
+      lat,
+      lat2,
+      lon,
+      lon2,
+      speed,
+      speed2,
+      id,
+      case when timeto2 > 60*60 and timeto > 60*60 then safe.ST_GeogPoint(lon_center, lat_center)
+      when timeto <= timeto2 or timeto2 is null then safe.ST_GeogPoint(lon_interpolate, lat_interpolate)
+      when timeto2 < timeto or timeto is null then safe.ST_GeogPoint(lon_interpolate2, lat_interpolate2)
+      end as likely_location,
+      scene_wkt,
+      scene_wkt_5km_in
+    FROM 
+      interpolated_positions
+    WHERE
+      # include all points where the interpolated position
+      # or extrapolated position is iwthin the scene
+      ( ST_Contains( ST_GeogFromText(scene_wkt),
+        safe.ST_GeogPoint(lon_interpolate,
+          lat_interpolate )))
+      or
+      (ST_Contains( ST_GeogFromText(scene_wkt),
+        safe.ST_GeogPoint(lon_interpolate2,
+          lat_interpolate2 )))
+            or
+      (ST_Contains( ST_GeogFromText(scene_wkt),
+        safe.ST_GeogPoint(lon_center,
+          lat_center )))
+          )
+          --
+          --
+ select 
+    * except(scene_wkt,
+      scene_wkt_5km_in),    
+    ST_Contains( ST_GeogFromText(scene_wkt),
+        likely_location) within_footprint,
+     ST_Contains( safe.ST_GeogFromText(scene_wkt_5km_in), 
+     likely_location)           within_footprint_5km_in
+       from close_to_scene
+      
+          
+          
+      
