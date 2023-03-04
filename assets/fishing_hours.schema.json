@@ -1,0 +1,26 @@
+[
+  {
+    "description": "Three letter ISO code for the flag state",
+    "mode": "NULLABLE",
+    "name": "flag",
+    "type": "STRING"
+  },
+  {
+    "description": "Sum of fishing hours in the date range each flag state",
+    "mode": "NULLABLE",
+    "name": "total_fishing_hours",
+    "type": "FLOAT"
+  },
+  {
+    "description": "Start date of the time range for the aggregation",
+    "mode": "Required",
+    "name": "start_date",
+    "type": "DATE"
+  },
+  {
+    "description": "End date (inclusive) /of the time range for the aggregation",
+    "mode": "Required",
+    "name": "end_date",
+    "type": "DATE"
+  }
+]

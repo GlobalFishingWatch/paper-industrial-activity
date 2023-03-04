@@ -1,0 +1,16 @@
+--
+-- [EXAMPLE QUERY]
+-- This is a sample query provided as part of a pipeline project template
+--
+--
+-- Verify that the data in the output table is reasonable
+--
+
+CREATE TEMP FUNCTION startdate() AS (DATE('{{ start_date.strftime("%Y-%m-%d") }}'));
+
+SELECT
+  COUNT(distinct flag) BETWEEN 100 AND 200 as success
+FROM
+  `{{ dest_fishing_hours_flag_table }}`
+WHERE
+  start_date = startdate()

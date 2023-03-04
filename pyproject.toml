@@ -1,0 +1,32 @@
+[build-system]
+requires = [
+    "pip ~= 22.1.1",
+    "setuptools ~= 62.3.2",
+    "wheel ~= 0.37.1"
+]
+build_backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+markers = [
+    "commit: marks tests as requested before commit",
+    "slow: marks tests as very slow and to be run on your own",
+]
+
+[tool.black]
+skip-string-normalization = 1
+
+[tool.flake8]
+ignore = ['E203', 'E731', 'EF821']
+per-file-ignores = [
+    '__init__.py:F401',
+]
+max-line-length = 88
+max-complexity=12
+
+[tool.isort]
+profile = "black"

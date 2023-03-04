@@ -1,0 +1,21 @@
+--
+-- [EXAMPLE QUERY]
+-- This is a sample query provided as part of a pipeline project template
+--
+-- Compute total fishing hours by flag state over a specified time period
+--
+
+CREATE TEMP FUNCTION startdate() AS (DATE('{{ start_date.strftime("%Y-%m-%d") }}'));
+CREATE TEMP FUNCTION enddate() AS (DATE('{{ end_date.strftime("%Y-%m-%d") }}'));
+
+SELECT
+  SUM(fishing_hours) AS total_fishing_hours,
+  flag,
+  startdate() as start_date,
+  enddate() as end_date
+FROM
+  `{{ source_fishing_effort_table }}`
+WHERE
+  DATE(_PARTITIONTIME) BETWEEN startdate() AND enddate()
+GROUP BY
+  flag

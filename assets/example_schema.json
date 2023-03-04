@@ -1,0 +1,32 @@
+[
+  {
+    "description": "description for string variable",
+    "mode": "NULLABLE",
+    "name": "string_variable",
+    "type": "STRING"
+  },
+  {
+    "description": "description for timestamp variable",
+    "mode": "NULLABLE",
+    "name": "timestamp_variable",
+    "type": "TIMESTAMP"
+  },
+  {
+    "description": "description for float variable",
+    "mode": "NULLABLE",
+    "name": "float_variable",
+    "type": "FLOAT"
+  },
+  {
+    "description": "description for integer variable",
+    "mode": "NULLABLE",
+    "name": "integer_variable",
+    "type": "INTEGER"
+  },
+  {
+    "description": "description for boolean variable",
+    "mode": "NULLABLE",
+    "name": "boolean_variable",
+    "type": "BOOLEAN"
+  }
+]
