@@ -1,3 +1,35 @@
+<!-- #region -->
+# Undisclosed Industrial Activity
+
+This repository contains many of the analyses, all of the code to generate the figures, for the paper, `Satellite mapping reveals extensive undisclosed industrial activity at sea.`
+
+Most of these analyes are in the `notebooks` folder, which contains the following subfolders:
+
+ - analyses_spatial: Code for many of the spatial analyses in the text
+ - analyses_timeseries: Code for the timeseries analysis, including Figure 4
+ - matching_pipeline: Matching SAR and AIS, building on the methods described in [Kroodsma et al. 2022](https://www.nature.com/articles/s41598-022-23688-7)
+ - model_features: How we developed features to train the model that identifies fishing and non-fishing vessels
+ - rasterize_footprints: Turns satellite image footprints into rasters that are 200th of a degree by 200th of a degree
+ - roads: Identifies where fast moving trucks on roads may appear in the ocean due to the doppler shift
+ - paper_figures: All of the other figures (this needs to be reorganized)
+ 
+ Missing: all the SAR analyses and figures
+
+
+
+
+
+
+
+
+
+
+
+
+# Old stuff below from the template
+
+
+
 This project provides a template and [cooresponding contribution and best practices guide](./CONTRIBUTE.md) for `python` projects. This repo is a python project template from
 which you can create a new repo [instructions found in Setup](./CONTRIBUTE.md/#using-a-repository).
 
@@ -65,3 +97,4 @@ description = A python template repo for the Research and Innovation team at Glo
 5. Update the `README.md` to what is relevant for your project.
 
 6. Delete the `Using the best practices template` section of this `README.md` document. Finally, you can fill out the rest of this `README.md` to fit your project. Also, feel free to delete the contents of the `pkg` and `tests` directories, from your repository. Eventually your project should supplant this code.
+<!-- #endregion -->
