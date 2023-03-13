@@ -1,6 +1,6 @@
-# Analyses
+# Spatail Analyses
 
-This folder contains notebooks that produce analyses and figures for the paper. These notebooks include:
+This folder contains notebooks that produces a number of the spatial analyses and figures for the paper. These notebooks include:
 
 ### AISFishingByContinent.py
 Used to calculate supplemental table 1, AIS fishing by continent
