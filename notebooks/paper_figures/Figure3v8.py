@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -181,8 +181,13 @@ mycmap5 = get_continuous_cmap(palette5)
 
 # %%
 # NOTE: feather can store date objects, CSV dates need to be parsed (str -> date)
-f = "../data/24day_rolling_augmented_v20230220.csv.zip"
-df1 = pd.read_csv(f, parse_dates=["rolling_date"])
+f = "../../data/24day_rolling_augmented_v20230220.feather"
+df1 = pd.read_feather(f) #, parse_dates=["rolling_date"])
+
+# %%
+
+# %%
+df1.rolling_date = df1.rolling_date.apply(lambda x: datetime.datetime(x.year,x.month,x.day))
 
 # %%
 # Crop beguining and end data points
@@ -708,6 +713,6 @@ for ax in [ax1a, ax2a]:
 fig.align_labels()
 
 if SAVE:
-    plt.savefig("figures/fig3v2.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
+    plt.savefig("../../figures/fig3v2.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
 
 # %%

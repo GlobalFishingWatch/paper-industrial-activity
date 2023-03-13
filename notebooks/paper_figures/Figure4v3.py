@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -94,11 +94,11 @@ if QUERY:
     qw = f"SELECT * FROM proj_global_sar.{tab_wind}"
     df_oil = pd.read_gbq(qo, project_id="world-fishing-827")
     df_wind = pd.read_gbq(qw, project_id="world-fishing-827") 
-    df_oil.to_feather(f"../data/{tab_oil}.feather")
-    df_wind.to_feather(f"../data/{tab_wind}.feather")
+    df_oil.to_feather(f"../../data/{tab_oil}.feather")
+    df_wind.to_feather(f"../../data/{tab_wind}.feather")
 else:
-    df_oil = pd.read_feather(f"../data/{tab_oil}.feather", use_threads=True)
-    df_wind = pd.read_feather(f"../data/{tab_wind}.feather", use_threads=True)
+    df_oil = pd.read_feather(f"../../data/{tab_oil}.feather", use_threads=True)
+    df_wind = pd.read_feather(f"../../data/{tab_wind}.feather", use_threads=True)
 
 df_oil.head()
 
@@ -183,9 +183,9 @@ tab_infra = "offshore_infra_reclassified_w_regions_v20230222"
 if QUERY:
     q = f"SELECT * FROM proj_global_sar.{tab_infra}  -- single date"
     df2 = pd.read_gbq(q, project_id="world-fishing-827")
-    df2.to_feather(f"../data/{tab_infra}.feather")
+    df2.to_feather(f"../../data/{tab_infra}.feather")
 else:
-    df2 = pd.read_feather(f"../data/{tab_infra}.feather", use_threads=True)
+    df2 = pd.read_feather(f"../../data/{tab_infra}.feather", use_threads=True)
 
 # Add columns for binning
 df2["x_index"] = (df2.lon * 100).astype(int)
@@ -329,11 +329,11 @@ if QUERY:
     qe = f"SELECT * FROM proj_global_sar.{tab_eez}"
     df_glob = pd.read_gbq(qg, project_id="world-fishing-827")
     df_eez = pd.read_gbq(qe, project_id="world-fishing-827") 
-    df_glob.to_feather(f"../data/{tab_glob}.feather")
-    df_eez.to_feather(f"../data/{tab_eez}.feather")
+    df_glob.to_feather(f"../../data/{tab_glob}.feather")
+    df_eez.to_feather(f"../../data/{tab_eez}.feather")
 else:
-    df_glob = pd.read_feather(f"../data/{tab_glob}.feather", use_threads=True)
-    df_eez = pd.read_feather(f"../data/{tab_eez}.feather", use_threads=True)
+    df_glob = pd.read_feather(f"../../data/{tab_glob}.feather", use_threads=True)
+    df_eez = pd.read_feather(f"../../data/{tab_eez}.feather", use_threads=True)
 
 df3 = df_glob
 df4 = df_eez 
@@ -732,7 +732,7 @@ with psm.context(psm.styles.light):
 
 if SAVE:
     plt.savefig(
-        "figures/fig4v3.png", bbox_inches="tight", pad_inches=0.05, dpi=300
+        "../../figures/fig4v3.png", bbox_inches="tight", pad_inches=0.05, dpi=300
     )
 
 # %%

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -14,6 +14,8 @@
 # ---
 
 # # Plot distribution of vessels and infrastructure as a function of distance from shore
+#
+# # NOTE -- THE QUERIES HERE NEED TO BE UPDATED IF THIS NOTEBOOK IS USED
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -289,4 +291,3 @@ plt.xlim(2, 100)
 plt.title("Objects and Vessels")
 plt.xlabel("distance from shore, km")
 plt.ylabel("objects or vessels per km on average day")
-# -

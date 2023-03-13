@@ -274,10 +274,13 @@ def map_bivariate(
 scale = 5
 
 # %%
+# ls ../../data
+
+# %%
 # Load fishing data
 # df = pd.read_csv('../data/raster_10th_degree_v20230217.csv.zip')
-df = pd.read_csv('../data/raster_5th_degree_v20230218.csv.zip')
-df_bars = pd.read_csv('../data/vessels_bycontinent_v20230217.csv')
+df = pd.read_feather('../../data/raster_5th_degree.feather')
+df_bars = pd.read_csv('../../data/vessels_bycontinent_v20230217.csv')
 
 # %%
 df.head()
@@ -613,6 +616,6 @@ with psm.context(psm.styles.light):
     add_legend(ax3)
 
 if SAVE:
-    plt.savefig("figures/fig1v2b_5th.png", bbox_inches="tight", pad_inches=0, dpi=300)
+    plt.savefig("../../figures/fig1v2b_5th.png", bbox_inches="tight", pad_inches=0, dpi=300)
 
 # %%

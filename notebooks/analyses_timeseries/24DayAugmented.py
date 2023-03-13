@@ -1014,10 +1014,7 @@ plt.title("Fishing Vessels in Western North Korean EEZ")
 plt.ylabel("Vessels")
 
 plt.ylim(0,2300)
+plt.savefig("../../figures/WNorthKoreaFishing.png",bbox_inches='tight',dpi=300)
 # plt.legend()
 # plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
 # plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
-# -
-
-
-

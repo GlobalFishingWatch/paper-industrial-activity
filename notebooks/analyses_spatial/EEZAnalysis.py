@@ -33,29 +33,30 @@ pyperclip.copy(eliminated_locations)
 # !ls ../../data/World_EEZ_v11_20191118/
 
 # +
-# https://www.marineregions.org/eezattribute.php
-import fiona
+### upload EEZ info table to bigquery. uncomment to redo
 
-attributes = []
-with fiona.open("../../data/World_EEZ_v11_20191118/eez_v11.shp", "r") as source:
-    print( len(source))
-    for s in source:
-        attributes.append(s['properties'])
+# # https://www.marineregions.org/eezattribute.php
+# import fiona
+
+# attributes = []
+# with fiona.open("../../data/World_EEZ_v11_20191118/eez_v11.shp", "r") as source:
+#     print( len(source))
+#     for s in source:
+#         attributes.append(s['properties'])
+        
+# df = pd.DataFrame(attributes).sort_values("MRGID_TER1")
+# df['MRGID'] = df.MRGID.apply(lambda x: str(int(x)))
+
+# # upload to bigquery
+# df.to_gbq('proj_global_sar.eez_info_v11', if_exists='replace')
 # -
 
-df = pd.DataFrame(attributes).sort_values("MRGID_TER1")
+df_eez = pd.read_gbq("select * from proj_global_sar.eez_info_v11")
 
 
-df['MRGID'] = df.MRGID.apply(lambda x: str(int(x)))
+df_eez['MRGID'] = df_eez.MRGID.apply(lambda x: str(int(x)))
+df_eez = df_eez.set_index('MRGID')
 
-
-# upload to bigquery
-df.to_gbq('proj_global_sar.eez_info_v11', if_exists='replace')
-
-
-df['MRGID'] = df.MRGID.apply(lambda x: str(int(x)))
-df = df.set_index('MRGID')
-df_eez = df
 df_eez.head()
 
 # +
@@ -512,7 +513,9 @@ df[df.ISO_TER1=="ESP"]
 d = df.groupby("ISO_TER1").sum()
 d['concentration_200'] = d.fishing_under_200/d.area_km2_under200_imaged
 
-d.to_csv("fishing_v2.csv")
+# +
+# d.to_csv("fishing_v2.csv")
+# -
 
 # how much of the world's area under 200 meters was imaged
 d.area_km2_under200_imaged.sum()/d.area_km2_under200.sum()
@@ -563,7 +566,7 @@ df.area_km2_under200.sum()/df.area_km2.sum()
 # what fraciton of fishing is in asia?
 df[df.continent=='Asia'].fishing.sum()/df.fishing.sum()
 
-df.to_csv("activity_by_eez.csv",index=False)
+df.to_csv("../../data/activity_by_eez.csv",index=False)
 
 # fraction of fishing under 
 df.fishing_under_200.sum()/df.fishing.sum()

@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -48,27 +48,27 @@ def get_lonlat_from_id(detect_ids):
 # ## Map global fishing activity
 
 # %%
-q = """
-select 
-  detect_lat,
-  detect_lon,
-  detect_id,
-  length_m,
-  score>1e-2 as is_matched_to_ais
-from
-  proj_global_sar.detections_w_overpasses_v20220805
-where
-  -- the following is very restrictive on repeated objects
-  repeats_100m_180days_forward < 3 and
-  repeats_100m_180days_back < 3 and
-  repeats_100m_180days_center < 3
-  -- get rid of scenes where more than half the detections
-  -- are likely noise
-  and (scene_detections <=5 or scene_quality > .5)
-  and presence > .7
-  and extract(date from detect_timestamp) 
-     between "2017-01-01" and "2021-12-31"
-"""
+# q = """
+# select 
+#   detect_lat,
+#   detect_lon,
+#   detect_id,
+#   length_m,
+#   score>1e-2 as is_matched_to_ais
+# from
+#   proj_global_sar.detections_w_overpasses_v20220805
+# where
+#   -- the following is very restrictive on repeated objects
+#   repeats_100m_180days_forward < 3 and
+#   repeats_100m_180days_back < 3 and
+#   repeats_100m_180days_center < 3
+#   -- get rid of scenes where more than half the detections
+#   -- are likely noise
+#   and (scene_detections <=5 or scene_quality > .5)
+#   and presence > .7
+#   and extract(date from detect_timestamp) 
+#      between "2017-01-01" and "2021-12-31"
+# """
 
 # %%
 # --- Query and save data --- #
@@ -77,14 +77,13 @@ where
 # df.to_feather('data/vessel_detections_2017_2021.feather')
 
 # --- Load vessel data --- #
-
-df = pd.read_feather('../data/vessel_detections_2021.feather', use_threads=True)
-df = df.rename(columns={'detect_lon': 'lon', 'detect_lat': 'lat'})
-
+df = pd.read_feather("../../data/all_detections_matched_rand_2021.feather")
+# drop unknown vessels, which are less than 1/1000th of the total
+df = df[df.category_rand != "none"]
 df.head()
 
 # %%
-df['is_matched_to_ais'] = df.is_matched_to_ais.astype(int)
+df["is_matched_to_ais"] = df.category_rand.isin(['matched_fishing','matched_nonfishing']).astype(int)
 
 
 # %%

@@ -7,12 +7,15 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.2
+#       jupytext_version: 1.14.0
 #   kernelspec:
-#     display_name: Python 3.9.12 ('dark_targets')
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
+
+# %% [markdown]
+# # DELETE THIS FILE???? or is it used??? 
 
 # %%
 # %matplotlib inline
@@ -339,7 +342,7 @@ df.label.unique()
 
 # %%
 len(df)
-df.to_feather("data/oil_w_polygons.feather")
+df.to_feather("../../data/oil_w_polygons.feather")
 
 # %% [markdown]
 # ### Make a map of detections by class

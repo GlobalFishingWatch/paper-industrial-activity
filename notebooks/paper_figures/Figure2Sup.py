@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -41,7 +41,7 @@ import skimage
 
 # %%
 # Load data file generated in Figure2v5.py
-df = pd.read_feather('../data/all_detections_matched_rand.feather', use_threads=True)
+df = pd.read_feather('../../data/all_detections_matched_rand.feather', use_threads=True)
 df.head()
 
 # %%
@@ -444,6 +444,4 @@ with psm.context(psm.styles.light):
             # break
 
 if SAVE:
-    plt.savefig("figures/fig2v2sup2.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
-
-# %%
+    plt.savefig("../../figures/fig2v2sup2.png", bbox_inches="tight", pad_inches=0.01, dpi=300)

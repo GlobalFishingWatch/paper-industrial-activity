@@ -164,10 +164,13 @@ def save_raster(scale):
     dfr.to_feather(f"../../data/raster_{scale}th_degree.feather")
 
 
-save_raster(20)
 
-save_raster(10) # 10th of a degree is what we use for the main figures
+# +
+# save_raster(10) # 10th of a degree is what we use for the main figures
+# -
 
 save_raster(5) # 10th of a degree is what we use for the main figures
+
+save_raster(20)
 
 

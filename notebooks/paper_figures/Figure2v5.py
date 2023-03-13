@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -40,61 +40,65 @@ import skimage
 # ## Map global fishing activity
 
 # %%
-# NOTE: Read in GIANT csv of all detections,
-# created by DownloadAllDetections.ipynb
-# this is a huge file... >1.5gb
-# df is the master dataframe of all the dections.
-# we will filter its size down below.
-df = pd.read_csv("../data/all_detections_v20230218.csv.gz", compression='gzip')
-df = df.rename({'all_detections_v20230218.csv': 'lat'}, axis=1)
+# # NOTE: Read in GIANT csv of all detections,
+# # created by DownloadAllDetections.ipynb
+# # this is a huge file... >1.5gb
+# # df is the master dataframe of all the dections.
+# # we will filter its size down below.
+# df = pd.read_csv("../data/all_detections_v20230218.csv.gz", compression='gzip')
+# df = df.rename({'all_detections_v20230218.csv': 'lat'}, axis=1)
 
 # %%
-df.head()
+# df.head()
 
 # %%
-df.matched_category.unique()
+# df.matched_category.unique()
 
 # %%
+### this is now done in the notebook and query
 # the random numnder is actually a better way to map lots and lots of dots
 # basically, for dark vessels, if rand > fishing_score map it as fishing,
 # otherwise map it as non-fishing. So, if you have 100 dark detections
 # with a score of .501, you will get 50 fishing and 50 non-fishing,
 # while just using a threshold of .5 would give you 100 fishing vessels
-df["rand"] = np.random.random(len(df))
+# df["rand"] = np.random.random(len(df))
 
 
-def get_category_rand(row):
-    if (row.matched_category == "matched_nonfishing") or (
-        (row.matched_category == "matched_unknown")
-        and (row.fishing_score < row.rand)
-    ):
-        return "matched_nonfishing"
+# def get_category_rand(row):
+#     if (row.matched_category == "matched_nonfishing") or (
+#         (row.matched_category == "matched_unknown")
+#         and (row.fishing_score < row.rand)
+#     ):
+#         return "matched_nonfishing"
 
-    if (row.matched_category == "unmatched") and (row.fishing_score < 0.5):
-        return "dark_nonfishing"
+#     if (row.matched_category == "unmatched") and (row.fishing_score < 0.5):
+#         return "dark_nonfishing"
 
-    if (row.matched_category == "matched_fishing") or (
-        (row.matched_category == "matched_unknown")
-        & (row.fishing_score >= 0.5)
-    ):
-        return "matched_fishing"
+#     if (row.matched_category == "matched_fishing") or (
+#         (row.matched_category == "matched_unknown")
+#         & (row.fishing_score >= 0.5)
+#     ):
+#         return "matched_fishing"
 
-    if (row.matched_category == "unmatched") and (row.fishing_score >= 0.5):
-        return "dark_fishing"
+#     if (row.matched_category == "unmatched") and (row.fishing_score >= 0.5):
+#         return "dark_fishing"
 
 
-df["category_rand"] = df.apply(get_category_rand, axis=1)
-
-# %%
-# this drops all detections that have a fishing score that is na and do not match to
-# a vessel. This is a small percent of detections (~1%), but it we can't plot them
-# because we can't assign fishing or non-fishing to them.
-df = df[~df.category_rand.isna()]
+# df["category_rand"] = df.apply(get_category_rand, axis=1)
 
 # %%
-df = df.reset_index(drop=True)
-df.to_feather('../data/all_detections_matched_rand.feather')
-df.head()
+# # this drops all detections that have a fishing score that is na and do not match to
+# # a vessel. This is a small percent of detections (~1%), but it we can't plot them
+# # because we can't assign fishing or non-fishing to them.
+# df = df[~df.category_rand.isna()]
+
+# %%
+# df = df.reset_index(drop=True)
+# df.to_feather('../data/all_detections_matched_rand.feather')
+# df.head()
+
+# %%
+df = pd.read_feather("../../data/all_detections_matched_rand.feather")
 
 # %%
 # Split into fishing and non-fishing
@@ -524,6 +528,6 @@ with psm.context(psm.styles.light):
             # break
 
 if SAVE:
-    plt.savefig("figures/fig2v2sup1.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
+    plt.savefig("../../figures/fig2v2sup1.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
 
 # %%

@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -17,6 +17,7 @@
 # # Make High-Resolution Global Maps of Vessel Detections from Sentinel-1
 #
 #
+# # IF THIS NOTEBOOK IS USED THE QUERIES NEED UPDATING
 
 # %matplotlib inline
 from datetime import datetime, timedelta
@@ -79,9 +80,6 @@ def get_country(x):
         )
     except:
         "None"
-
-
-# -
 
 
 # +
@@ -426,8 +424,8 @@ dark_nonfishing = psm.rasters.df2raster(
 )
 
 nonfishing_ratio = dark_nonfishing / nonfishing_total
+# -
 
-# +
 map_bivariate(
     nonfishing_total,
     nonfishing_ratio,

@@ -172,28 +172,63 @@ from
   final_table'''
 
 # +
+## Uncomment to run more
 
-table_id = 'world-fishing-827.proj_global_sar.detections_classified_v20230216'
-query_to_table(q, table_id)
+# table_id = 'world-fishing-827.proj_global_sar.detections_classified_v20230216'
+# query_to_table(q, table_id)
 
 
 
 # +
-description = '''
-This classifies each likely vessel detection into categories (matched fishing, matched non-fihsing, etc.
-''' + q
+# description = '''
+# This classifies each likely vessel detection into categories (matched fishing, matched non-fihsing, etc.
+# ''' + q
 
-update_table_description(table_id, 
-                        description)
+# update_table_description(table_id, 
+#                         description)
 # -
 
-# # Now if you want to download it locally...
+# # Download this locally
+#
+# This is downloading > 1gb of data, so it takes a long time
 
-df = pd.read_gbq('''select lat, lon, year, matched_category from proj_global_sar.detections_classified_v20230216''')
+df = pd.read_gbq('''
+select 
+    lat, lon, 
+    case when matched_category = 'matched_nonfishing' then 'matched_nonfishing'
+    when matched_category = 'matched_fishing' then 'matched_fishing'
+    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_fishing'
+    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_fishing'
+    when matched_category = 'matched_unknown' and random < fishing_score then 'matched_fishing'
+    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_nonfishing'
+    when matched_category = 'unmatched' and random < fishing_score then 'dark_fishing'
+    when matched_category = 'unmatched' and random > fishing_score then 'dark_nonfishing'
+    else "none" end as category_rand
+from 
+ (select *, rand()  as random from  proj_global_sar.detections_classified_v20230216)
+''')
 
 # save this *very large* data frame to a csv 
-df.to_feather("../../data/all_detections_mult_length_threshold_v20230220.feather")
+df.to_feather("../../data/all_detections_matched_rand.feather")
 
+# +
+df = pd.read_gbq('''
+select lat, lon, 
+    case when matched_category = 'matched_nonfishing' then 'matched_nonfishing'
+    when matched_category = 'matched_fishing' then 'matched_fishing'
+    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_fishing'
+    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_fishing'
+    when matched_category = 'matched_unknown' and random < fishing_score then 'matched_fishing'
+    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_nonfishing'
+    when matched_category = 'unmatched' and random < fishing_score then 'dark_fishing'
+    when matched_category = 'unmatched' and random> fishing_score then 'dark_nonfishing'
+    else "none" end as category_rand
+from 
+ (select *, rand()  as random from  proj_global_sar.detections_classified_v20230216)
+  where year = 2021
+''')
 
+df.to_feather("../../data/all_detections_matched_rand_2021.feather")
+# -
 
 
