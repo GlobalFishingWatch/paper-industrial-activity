@@ -47,3 +47,9 @@ requirements-local.txt
 # untracked
 untracked
 outputs/*
+
+# Ignore for public repo
+.gitignore
+.darglint
+.mypy.ini
+.pre-commit-config.yaml
