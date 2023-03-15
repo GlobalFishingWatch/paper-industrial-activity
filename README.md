@@ -6,8 +6,8 @@ by [Global Fishing Watch](http://#) _et al_.
 
 ## Content
 
-`detector/` - Source code of SAR detection system
+`detector/` - Source code of SAR detection system in Earth Engine
 
-`nnets/` - Source code of Deep Learning models
+`nnets/` - Source code of Deep Learning models and training
 
-`analyses/` - Source code of analyses and figures
+`analyses/` - Source code and Notebooks of analyses and figures
