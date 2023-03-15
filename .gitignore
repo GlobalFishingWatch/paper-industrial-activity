@@ -1,0 +1,55 @@
+# Python files and directories
+*.pyc
+*~
+*.egg-info
+__pycache__/
+_build/
+build/
+dist/
+*.eggs
+MANIFEST
+.DS_Store
+.mypy_cache/
+/*.egg-info/
+/build/
+/dist/
+
+.environments/**
+venv
+.ipynb_checkpoints/**
+**.ipynb
+**.psv
+**.png
+**.egg-info
+**__pycache__*
+
+# Documentation artifacts
+/doc/_build/
+/doc/modules.rst
+/doc/example_module.rst
+
+# coverage.py artifacts
+.coverage
+.cache
+.vscode
+htmlcov/
+coverage.xml
+coverage.json
+
+# Other files and directories
+core.*
+vgcore.*
+requirements-local.txt
+
+# Mac
+*.DS_Store
+
+# untracked
+untracked
+outputs/*
+
+# Ignore for public repo
+#.gitignore
+.darglint
+.mypy.ini
+.pre-commit-config.yaml
