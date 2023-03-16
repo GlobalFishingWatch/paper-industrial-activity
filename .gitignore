@@ -53,3 +53,4 @@ outputs/*
 .darglint
 .mypy.ini
 .pre-commit-config.yaml
+.ipynb_checkpoints
