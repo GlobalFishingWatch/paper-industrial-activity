@@ -45,7 +45,7 @@ See paper for further description of the methods and outputs:
 * `set_params.py` - replace/add params to PARAMS files
 * `rasterize_foot.py` - create overpass raster for N days
 * `interp_ais.py` - get AIS positions close to a scene
-* `get_satpos.py` - calculate Sentinel-1 positions
+* `locate_sat.py` - calculate Sentinel-1 positions
 
 ## Examples
 
