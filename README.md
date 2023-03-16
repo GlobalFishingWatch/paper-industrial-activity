@@ -32,7 +32,7 @@ Turning your repo into an installable python package allows for your core functi
 
 Follow these steps to turn your repo into an installable python package:
 1. Setup and activate the conda environment.
-2. Build your environment then use `pip install -e .[all]`. This will create a folder titled `pkg.egg-info` and will allow you to access the code within your `pkg` folder from outside of that folder.
+2. Build your environment then use `pip install -e .`. This will create a folder titled `pkg.egg-info` and will allow you to access the code within your `pkg` folder from outside of that folder.
 
 
 # How to run things
