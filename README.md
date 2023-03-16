@@ -31,7 +31,7 @@ conda env create -f radenv.yaml -n ENV_NAME
 Turning your repo into an installable python package allows for your core functions to be accessed throughout the repo without having to define paths. It will make your imports very clean and store core functionality in a central place so that multiple users of the repo can benefit from functions that may have previously lived only in one person's notebook.
 
 Follow these steps to turn your repo into an installable python package:
-1. Setup and activate the conda environment (See [Building conda environment](#building-conda-environment))
+1. Setup and activate the conda environment.
 2. Build your environment then use `pip install -e .[all]`. This will create a folder titled `pkg.egg-info` and will allow you to access the code within your `pkg` folder from outside of that folder.
 
 
