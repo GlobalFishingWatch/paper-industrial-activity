@@ -13,9 +13,6 @@ by [Global Fishing Watch](http://#) _et al_.
 
 `analyses/` - Source code and notebooks of analyses and figures
 
-
-# Who uses this/depends on this
-
 # How to install or setup environment
 Most of the code in this repository relies on a common environment used by the Global Fishing Watch Research and Innovation team.
 
@@ -24,7 +21,6 @@ Most of the code in this repository relies on a common environment used by the G
 To create an environment with the default name of rad execute:
 
 conda env create -f radenv.yaml 
-from within the radenv directory.
 
 To create an environment with a different name use:
 
