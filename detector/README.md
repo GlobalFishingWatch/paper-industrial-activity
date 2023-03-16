@@ -1,4 +1,4 @@
-![S1 Detections](assets/images/s1-detections.png)
+![S1 Detections](assets/img/s1-detections.png)
 
 # CFAR detector for Sentinel-1 with Google Earth Engine
 
