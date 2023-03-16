@@ -1,0 +1,30 @@
+# Params
+name: resnest_multi
+cycles: 3
+groups: 32
+epochs: 300
+base_filters: 48
+tile_size1: 100
+tile_size2: 100
+batch_size: 64
+monitor: val_loss
+patience: 1000
+smooth: 0
+augment: false
+shuffle: true
+weight: false
+
+# Data
+data: gs://scratch_fernando/infra_tiles_v1.zarr
+split: train/0
+index: ${data}.index/${split}
+
+# Dirs
+run_dir: ???
+src_dir: ???
+
+# Outputs
+model: ${run_dir}/model
+weights: ${run_dir}/weights
+history: ${run_dir}/history.csv
+inference: ${run_dir}/inference.csv
