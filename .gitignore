@@ -19,7 +19,7 @@ venv
 .ipynb_checkpoints/**
 **.ipynb
 **.psv
-**.png
+#**.png
 **.egg-info
 **__pycache__*
 
