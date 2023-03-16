@@ -1,8 +1,8 @@
 ![S1 Detections](assets/img/s1-detections.png)
 
-# CFAR detector for Sentinel-1 with Google Earth Engine
+# CFAR detector for Sentinel-1 with GEE
 
-Library to detect vessels and offshore infrastructure with SAR imagery using the Python API of Google Earth Engine.
+Library for detecting vessels and offshore infrastructure in SAR imagery with a Constant False Alarm Rate algorithm, using the Python API of Google Earth Engine.
 
 > **_NOTE:_**  The workflow relies on Google Cloud Storage and BigQuery
 
@@ -10,7 +10,7 @@ Library to detect vessels and offshore infrastructure with SAR imagery using the
 See paper for further description of the methods and outputs:  
 [Satellite mapping reveals extensive industrial activity as sea](http://#)
 
-# Content
+## Content
 
 **Classes**
 
@@ -47,9 +47,9 @@ See paper for further description of the methods and outputs:
 * `interp_ais.py` - get AIS positions close to a scene
 * `get_satpos.py` - calculate Sentinel-1 positions
 
-# Examples
+## Examples
 
-## Run detections for specific dates (in this order)
+### Run detections for specific dates (in this order)
 
 Define dates and params in the YAML file (or pass as argument in script, see below):  
 
@@ -97,7 +97,7 @@ Evaluate all matches (this uses the footprint polygons generated below):
     evaluate.py path/to/match.yaml  # same file as above
 
 
-## Compute footprint polygons (needed for matching)
+### Compute footprint polygons (needed for matching)
 
 Create a vector footprint for each scene and export the polygon to GCS as geojson:  
 
@@ -120,14 +120,14 @@ Rasterize footprint polygons in bigquery (at 0.05 deg resolution) [only needed f
     rasterize_footprints.py {the_date} {n_days} [version]
 
 
-## Interpolate AIS positions (needed for matching)
+### Interpolate AIS positions (needed for matching)
 
 Interpolate AIS positions to the time of each scene and vessel (detection) locations:  
 
     interpolate_ais.py {the_date} {n_days} [version]
 
 
-## Evaluate false positives (only for assessment)
+### Evaluate false positives (only for assessment)
 
 Run Notebooks in this order
 
@@ -136,7 +136,7 @@ Run Notebooks in this order
     LabelPotentialFalsePositives.py
     EvaluatePotentialFalsePositives.py
 
-## User-made script examples
+### User-made script examples
 
 Run vessel detection for specific days (`run_detector.py`):  
 
@@ -212,7 +212,7 @@ Export detection footprints for a few scenes:
         ).process(folder='outdir', skip_done=True)
 
 
-## Errors
+### Errors
 
 In Earth Engine, an argument being null is usually the same as it being omitted. Hence, a call to Image.constant with the value null will produce the error Image.constant: Parameter 'value' is required.
 
