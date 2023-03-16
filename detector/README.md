@@ -1,50 +1,226 @@
-# DEPRECIATED
+![S1 Detections](assets/images/s1-detections.png)
 
-Need to write this. All the information below is invalid!
+# CFAR detector for Sentinel-1 with Google Earth Engine
 
-# sentinel_1_vessel_detection_vm
-For running vessel detections on virtual machines
+Library to detect vessels and offshore infrastructure with SAR imagery using the Python API of Google Earth Engine.
 
-
-The full sentinel-1 processing pipeline has many steps. For each day, the following is run:
-
-1. Run detections in earth engine. These are run by ee-sar-v20200410.py, which has three outputs: 1) a geojson file with all the detections, 2) the footprint of the radar images, and 3) the footprints of the radar images, but clipped to x km from shore (x can be 1 to 5, depending on the version of the script). These outputs are all saved to GCS.
-
-2. Upload the outputs to BigQuery. 
-
-3. Rasterize the scene footprints for the day. This is a query run off of the footprints that were uploaded to bigquery.
-
-4. Generate sentinel-1 satellite locations. These locations will be used in the matching query to account for the doppler shift
-
-5. The queries that match radar detections to AIS/VMS
+> **_NOTE:_**  The workflow relies on Google Cloud Storage and BigQuery
 
 
+See paper for further description of the methods and outputs:  
+[Satellite mapping reveals extensive industrial activity as sea](http://#)
+
+# Content
+
+**Classes**
+
+* `Params` - handles input parameters, files and table names
+* `Detector` - applies CFAR to a generic EE image object
+* `DetectorVessel` - applies `Detector` to a collection of scenes
+* `DetectorInfra` - applies `Detector` to an image composite
+* `DetectorInfraShore` - applies `DetectorInfra` to inshore/land area
+* `ExportFootprint` - applies `DetectorVessel` to get footprints only
+
+**Modules**
+
+* `detector.py` - the various `Detector` classes
+* `params.py` - the `Params` class
+* `footprint.py` - the `ExportFootprint` class
+* `gee.py` - functions to interact with GEE
+* `ranges.py` - date, tile, and window range iterators
+* `cloud.py` - gcs and bq helper functions
+* `utils.py` - generic helper functions
+* `checks.py` - name check helper functions
+
+**Scripts**
+
+* `detect_vessel.py` - run a vessel detector
+* `detect_infra.py` - run a fixed-infrastructure detector
+* `detect_shore.py` - run an inshore detector
+* `export_foot.py` - run a footprint generator
+* `upload_detect.py` - download/process/upload detections
+* `upload_foot.py` - download/process/upload footprints
+* `match_detect.py` - match detections to AIS
+* `eval_detect.py` - assess matched detections
+* `set_params.py` - replace/add params to PARAMS files
+* `rasterize_foot.py` - create overpass raster for N days
+* `interp_ais.py` - get AIS positions close to a scene
+* `get_satpos.py` - calculate Sentinel-1 positions
+
+# Examples
+
+## Run detections for specific dates (in this order)
+
+Define dates and params in the YAML file (or pass as argument in script, see below):  
+
+    config.yaml
+
+Run CFAR detector on all dates/scenes with Earth Engine (this exports to GCS as geojson):  
+
+    # User-made script calling detector classes and functions  
+
+    run_detector.py
+
+Download detections to local machine, convert from geojson to CSV, and upload to BigQuery:  
+
+    # Option 1: S1A and S1B are processed toguether (same instance -> same outdir)
+
+    upload.py --replace path/to/PARAMS_*
+
+    # Option 2: S1A and S1B are processed separately (different VMs -> diff outdirs)
+
+    upload.py -s common_subbucket_name --append path/to/PARAMS_S1A*  
+    upload.py -s common_subbucket_name --append path/to/PARAMS_S1B*
+
+    # Option 3: By region_id (if defined) to same subbucket (fixed infrastructure) 
+
+    upload.py -a path/to/PARAMS_*
+
+Match AIS and VMS to SAR detections [you'll need the footprints on BQ, see below]:  
+
+    # Option 1: Match all generated PARAMS files (single outdir)
+
+    match.py path/to/PARAMS_*
+
+    # Option 2: Match specific params/files from YAML file (multi outdir)
+
+    match.py path/to/match.yaml
+
+Evaluate all matches (this uses the footprint polygons generated below):  
+
+    # Option 1: Evaluate all generated PARAMS files  
+
+    evaluate.py path/to/PARAMS_*
+
+    # Option 2: Evaluate specific params/files from YAML file  
+
+    evaluate.py path/to/match.yaml  # same file as above
 
 
+## Compute footprint polygons (needed for matching)
 
-## Notes on the Earth Engine Script
+Create a vector footprint for each scene and export the polygon to GCS as geojson:  
 
-### Key earth engine assets:
- - users/brianwong-gfw/ikea/ne_110m_ocean
- - users/brianwong-gfw/ikea/olr/ocean-land-mask-100m-v20190514
+    # This is the same detection script with `export_footprint=True`  
 
-read more about this mask here:
-https://docs.google.com/document/d/1_whvRkmPyM4vcuncLcObqC7Jb0EurHtbx7XqomStDb0/edit
-see the mask on ee here: https://code.earthengine.google.com/ef68f4c9377266041d9b58c8ebd2fb0e
-and how it was created: https://code.earthengine.google.com/ae2f7f4914b2f7ea75ab2b11f630735b 
+    export_footprints.py {the_date} {n_days} [sat]
 
+Download footprints to local, convert to well known text, and upload to bigquery:  
 
-var minor_islands = ee.FeatureCollection("users/brianwong-gfw/ikea/ne_10m_minor_islands"),
-    reefs = ee.FeatureCollection("users/brianwong-gfw/ikea/unep-wcmc-global-reefs"),
-    sayres_small_islands = ee.FeatureCollection("users/brianwong-gfw/prj-geeoid/oceanlandraster/sayres_et_al_small_islands_table_30m"),
-    sayres_big_islands = ee.FeatureCollection("users/brianwong-gfw/prj-geeoid/oceanlandraster/sayres_et_al_big_islands_table_30m")
-  
-var gshhg_f = ee.FeatureCollection('users/skytruth-data/offshoreInfrastructureSupplementalShapefiles/GSHHG_f_L1');
-var gshhg_h = ee.FeatureCollection('users/skytruth-data/offshoreInfrastructureSupplementalShapefiles/GSHHG_h_L1');
-var osm = ee.FeatureCollection('users/skytruth-data/offshoreInfrastructureSupplementalShapefiles/osmLandPolygons');
-var esri = ee.FeatureCollection('users/christian/General_Data/Terrestrial/WorldCountries_ESRI');
+    # Option 1: Upload all generated PARAMS files  
 
-### [Brian's Guide to Sar](https://docs.google.com/document/d/13eUsBSrPEVRsjZKZPi1ic6R5qlH4PqVDgdSxAi0VwOs/edit#)
+    upload_footprints.py path/to/footprints/PARAMS_*
+
+    # Option 2: Upload specified days  
+
+    upload_footprints.py 2020-05-01 30
+
+Rasterize footprint polygons in bigquery (at 0.05 deg resolution) [only needed for analysis]:  
+
+    rasterize_footprints.py {the_date} {n_days} [version]
 
 
-This is where we track what the vms are running: https://docs.google.com/spreadsheets/d/1FHR5jBrf7QGi3JTdy9ASeCPsBwllwfNnULOjyFueRn0/edit#gid=0
+## Interpolate AIS positions (needed for matching)
+
+Interpolate AIS positions to the time of each scene and vessel (detection) locations:  
+
+    interpolate_ais.py {the_date} {n_days} [version]
+
+
+## Evaluate false positives (only for assessment)
+
+Run Notebooks in this order
+
+    GetPotentialFalsePositives.py
+    GroupPotentialFalsePositives.py
+    LabelPotentialFalsePositives.py
+    EvaluatePotentialFalsePositives.py
+
+## User-made script examples
+
+Run vessel detection for specific days (`run_detector.py`):  
+
+    from detector import DetectorVessel
+    from utils import date_range
+
+    for date in date_range('2020-01-01', '2020-12-30'):
+        DetectorVessel(
+            date=date,
+            satellite="S1A",
+            suffix="_a",
+            thresholdx=22,
+            resolution=20,
+            window_inner=140,
+            window_outer=240,
+            dialation_radius=60,
+        ).process(folder='outdir', skip_done=True)
+
+
+Run fixed-infrastructure detection for time window:
+
+    from detector import DetectorFixed
+    from utils import tile_range
+
+    # Define time window for composite
+    date1, date2 = ("2020-01-01", "2020-12-30")
+
+    # Define AOI, e.g. West Hemisphere
+    xmin, xmax, ymin, ymax = (-180, 0, -90, 90)
+
+    # Tiles are further divide into subtiles internaly
+    for k, reg in enumerate(tile_range(xmin, xmax, ymin, ymax, 20, 20)):
+        DetectorFixed(
+            region=list(reg),  # use list for now
+            region_id=f"WEST_{k:02}",
+            satellite="both",
+            orbit="both",
+            suffix="",
+            thresholdx=21,
+            resolution=20,
+            window_inner=140,
+            window_outer=200,
+            window_date=[date1, date2],
+            dialation_radius=45,
+            max_num_images=40,
+            min_num_images=5,
+            tile_dx=1,
+            tile_dy=1,
+        ).process(folder='outdir', check=True, every=60.0)
+
+
+Export detection footprints for a few scenes:
+
+    from detector import ExportFootprint
+
+    scenes = [
+        "S1A_IW_GRDH_1SDV_20180104T062704_20180104T062729_020001_02211F_22E3",
+        "S1B_IW_GRDH_1SDV_20200201T051926_20200201T051951_020071_025FC9_324B",
+        "S1A_IW_GRDH_1SDV_20200201T003833_20200201T003902_031052_039134_3DA3",
+    ]
+
+    subbucket = "20m_500s_500b_1p_vh_foot"
+
+    for scene_id in scenes:
+        ExportFootprint(
+            scene_id=scene_id,
+            subbucket=subbucket,
+            satellite='S1A',
+            foot_scale=500,
+            foot_buffer=500,
+            foot_percentile=1,
+            foot_usevv=False,
+        ).process(folder='outdir', skip_done=True)
+
+
+## Errors
+
+In Earth Engine, an argument being null is usually the same as it being omitted. Hence, a call to Image.constant with the value null will produce the error Image.constant: Parameter 'value' is required.
+
+    "state": "FAILED",
+    "task_type": "EXPORT_FEATURES",
+    "error_message": "Image.constant: Parameter 'value' is required.",
+
+    => No detections to export
+
+
+https://tinyurl.com/2p8a353m
