@@ -1,0 +1,42 @@
+with 
+
+ais_scored as (
+select 
+*
+from {{ matches_scored_ais_table }}
+WHERE
+  score > .00001
+  and ssvid not in (
+    select 
+      ssvid 
+    from 
+    `gfw_research.vi_ssvid_v20200410` 
+    where best.best_vessel_class = "gear"
+    or
+       REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"(.*)([\s]+[0-9]+%)$")
+    OR REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"[0-9]\.[0-9]V")
+    OR REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"(.*)[@]+([0-9]+V[0-9]?)$")
+    OR REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"BOUY")
+    OR REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"BUOY")
+    OR REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"NET MARK")
+    OR REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"NETMARK")
+    OR REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"NETFISHING")
+    OR REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"NET FISHING")
+    OR REGEXP_CONTAINS(ais_identity.shipname_mostcommon.value, r"^[0-9]*\-[0-9]*$")
+    
+  )  
+),
+
+unioned_tables as (
+select concat(source,ssvid) as ssvid_source, * from ais_scored
+{{ matches_scored_vms_tables }})
+
+
+SELECT
+  *,
+  ROW_NUMBER() OVER (PARTITION BY detect_id ORDER BY score DESC) row_number_detect_id,
+  ROW_NUMBER() OVER (PARTITION BY ssvid_source, scene_id ORDER BY score DESC) row_number_ssvid
+FROM
+  unioned_tables
+
+  
