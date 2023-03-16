@@ -9,13 +9,13 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: dark_targets
+#     display_name: rad
 #     language: python
 #     name: python3
 # ---
 
 # %% [markdown]
-# ## This code is used to inspect the wind infrastructure detectections by creating regional and global time series plots
+# # This code inspects the labelled infrastructure detectections by creating regional and global time series plots
 
 # %%
 import os
@@ -43,7 +43,7 @@ import pyseas.contrib as psc
 import pyseas.maps as psm
 
 
-import prj_global_sar_infra.infra_modules as im
+import undisclosed_industrial.infra_modules as im
 
 # %load_ext autoreload
 # %autoreload 2
@@ -51,19 +51,73 @@ import prj_global_sar_infra.infra_modules as im
 # %%
 elimination_string = im.messy_areas()
 
+# %%
+#reclassified infrastructure single date composite midpoint - '2021-10-01'
+q = '''
+SELECT
+  lon,
+  lat,
+  label,
+  from
+  `world-fishing-827.proj_global_sar.infrastructure_reclassified_v20230222` 
+where 
+  label in('oil', 'wind', 'unknown')
+'''
+df = pd.read_gbq(q)
+
+# %%
+df
+
 # %% [markdown]
-# ### Global timeseries of wind detections
+# ## Global map of detections by class
+
+# %%
+unknown = df.loc[df['label'] == 'unknown']
+
+wind = df.loc[df['label'] == 'wind']
+
+oil = df.loc[df['label'] == 'oil']
+
+# %%
+with psm.context(psm.styles.light):
+    fig = plt.figure(figsize=(25, 15))
+    psm.create_map()
+    psm.add_land()
+    psm.add_eezs()
+    
+    plt.scatter(oil.lon, oil.lat, s = 5, color = 'g', transform = psm.identity, label = 'Oil')
+
+    plt.scatter(wind.lon, wind.lat, s = 5, color = 'r', 
+                transform = psm.identity, label = 'Wind')
+
+    plt.scatter(unknown.lon, unknown.lat, s = 5, color = 'b', 
+                transform = psm.identity, label = 'unknown')
+
+    plt.legend(fontsize = 24, markerscale=6)
+
+    plt.show()
+    
+    # plt.savefig('infra_map', dpi = 300)
+
+# %% [markdown]
+# ## Global timeseries - all infrastructure 
 
 # %%
 q = f'''
 
 with 
 
+all_oil_polygons as (
+  select 
+    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
+  from 
+  proj_global_sar.oil_areas),
+
 all_wind_polygons as (
   select 
     ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
   from 
-  `proj_global_sar.infra_wind_regions`),
+  `world-fishing-827.proj_global_sar.infra_wind_regions`),
 
 reclassified_infra as (
   select 
@@ -106,12 +160,15 @@ and not (detect_lat between 8.8958 and 11.0153 and detect_lon between -72.2486 a
 
 final_detections as (
   select * from detections_labeled
-  where label in ('oil', 'probable_oil', 'wind', 'probable_wind', 'other')),
+  where label in ('oil', 'wind', 'other')
+),
 
 wind_region as (
 select 
   detect_id,
   detect_date,
+  lat,
+  lon,
   label,
   iso3,
   "inside_all_wind_polygons" as region,
@@ -122,423 +179,203 @@ cross join
 where  
   st_contains(geometry,
              ST_GEOGPOINT(lon,lat))
-and label in ('wind', 'probable_wind')
-),
+and label = 'wind'),
 
-detections_outside_wind_regions as (
+oil_region as (
 select 
   detect_id,
   detect_date,
+  lat,
+  lon,
   label,
   iso3,
-  "outside_all_wind_polygons" as region,
+  "inside_all_oil_polygons" as region,
 from 
   final_detections
-where 
- detect_id not in (select detect_id from wind_region)
-),
+cross join
+  all_oil_polygons
+where  
+  st_contains(geometry,
+             ST_GEOGPOINT(lon,lat))
+and label = 'oil')
 
-unioned_wind
- as (
-select * from wind_region
+select detect_date, count(*) as count from (
+select * except(region) from oil_region
 union all
-select * from detections_outside_wind_regions),
-
-wind_detects as (
-select detect_date, wind, probable_wind, region from
-( select
-detect_date,
-sum(if(label='wind',1,0)) wind,
-sum(if(label='probable_wind',1,0)) probable_wind,
-region
-from unioned_wind
-group by detect_date, region
-order by detect_date)),
+select * except(region) from wind_region
+union all (select detect_id, detect_date, lat, lon, label, iso3 from final_detections where label = 'other'))
+group by 1
+order by 1
 
 
-wind_detect_eez as (
-select * except (region) from wind_detects
--- where extract (year from detect_date) = 2021
-where region = 'inside_all_wind_polygons')
-
-select detect_date, wind from 
-wind_detect_eez
 '''
-wind_time = pd.read_gbq(q)
+global_infra = pd.read_gbq(q)
 
 # %%
-wind_time.min()
-
-# %%
-wind_change = (((wind_time['wind'].iloc[-1] - wind_time['wind'].iloc[0]) / wind_time['wind'].iloc[0]))* 100
-
-# %%
-print(f'Wind percent change = {round(wind_change,2)}')
+global_infra
 
 # %%
 mpl.rc('xtick', labelsize=16) 
 mpl.rc('ytick', labelsize=16) 
 fig, ax = plt.subplots(figsize=(20, 6))
 # ax.plot(eez["date"].tolist(), eez["count"].tolist())
-wind_time.plot(x = 'detect_date', y = 'wind', kind="line", ax=ax, label='wind', linewidth = 4)
+global_infra.plot(x = 'detect_date', y = 'count', kind="line", ax=ax, linewidth = 4)
 
 plt.legend(fontsize=20)
-ax.set_ylim([0, wind_time["wind"].max()+1000])
+# ax.set_ylim([0, class_time["count"].max()+1000])
+
+plt.title(f"Global Infrastructure Detections", fontsize = 18)
+plt.savefig('global_infra', dpi = 300)
+plt.show()
+
+# %% [markdown]
+# ## Global timeseries of infra by class
+
+# %%
+q = f'''
+
+with 
+
+all_oil_polygons as (
+  select 
+    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
+  from 
+  proj_global_sar.oil_areas),
+
+all_wind_polygons as (
+  select 
+    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
+  from 
+  `world-fishing-827.proj_global_sar.infra_wind_regions`),
+
+reclassified_infra as (
+  select 
+  id, date, lon, lat,
+  if( label = 'unknown', 'other', label) as label
+  from
+  `world-fishing-827.proj_global_sar.infrastructure_reclassified_v20230222`
+),
+
+detections_labeled as (
+SELECT 
+  detect_id,
+  detect_lon as lon,
+  detect_lat as lat,
+  extract( date from midpoint) detect_date,
+  if(b.label is null, c.label, b.label) label,
+  if( 
+     array_length(ISO_TER1)>0, 
+     if(ISO_TER1[ordinal(1)]="", "None",ISO_TER1[ordinal(1)] ),   
+    'None') iso3
+FROM 
+  `world-fishing-827.proj_global_sar.infrastructure_repeat_cat_6m_v20220805` a
+left join
+  reclassified_infra b
+on (detect_lon = lon and detect_lat = lat)
+left join (select detect_id, label 
+from `proj_global_sar.composite_ids_labeled_v20220708`) c
+using (detect_id)
+where detect_id is not null
+and not (detect_lat between -57.8 and -35.05 and detect_lon between -87.98 and -52.54)  -- argentina_chile 
+and not (detect_lat between -58.03 and -50.4 and detect_lon between -45.38 and -27.77)  -- south_atlantic 
+and not (detect_lat between -46.1 and -33.7 and detect_lon between 136.9 and 151.4)  -- se_australia 
+and not (detect_lat between 60.6 and 71.5 and detect_lon between -8.3 and 16.0)  -- norway_s 
+and not (detect_lat between 65.96 and 90 and detect_lon between -4.96 and 30.0)  -- norway_n 
+and not (detect_lat between 50.8 and 90 and detect_lon between -118.2 and -48.6)  -- canada_ne 
+and not (detect_lat between 65.2 and 90 and detect_lon between -178.0 and -110.9)  -- alaska_n 
+and not (detect_lat between 62.4 and 90 and detect_lon between 33.3 and 179.1)  -- russia_n 
+and not (detect_lat between 8.8958 and 11.0153 and detect_lon between -72.2486 and -70.8539)  -- lake_maracaibo 
+),
+
+final_detections as (
+  select * from detections_labeled
+  where label in ('oil', 'wind', 'other')
+),
+
+wind_region as (
+select 
+  detect_id,
+  detect_date,
+  lat,
+  lon,
+  label,
+  iso3,
+  "inside_all_wind_polygons" as region,
+from 
+  final_detections
+cross join
+  all_wind_polygons
+where  
+  st_contains(geometry,
+             ST_GEOGPOINT(lon,lat))
+and label = 'wind'),
+
+oil_region as (
+select 
+  detect_id,
+  detect_date,
+  lat,
+  lon,
+  label,
+  iso3,
+  "inside_all_oil_polygons" as region,
+from 
+  final_detections
+cross join
+  all_oil_polygons
+where  
+  st_contains(geometry,
+             ST_GEOGPOINT(lon,lat))
+and label = 'oil')
+
+select detect_date, label, count(*) as count from (
+select * except(region) from oil_region
+union all
+select * except(region) from wind_region
+union all (select detect_id, detect_date, lat, lon, label, iso3 from final_detections where label = 'other'))
+group by 1, 2
+order by 1
+
+
+'''
+class_time = pd.read_gbq(q)
+
+# %%
+class_time
+
+# %%
+mpl.rc('xtick', labelsize=16) 
+mpl.rc('ytick', labelsize=16) 
+fig, ax = plt.subplots(figsize=(20, 6))
+# ax.plot(eez["date"].tolist(), eez["count"].tolist())
+for label, table in class_time.groupby('label'):
+    table.plot(x = 'detect_date', y = 'count', kind="line", ax=ax, label=label, linewidth = 4)
+
+plt.legend(fontsize=20)
+ax.set_ylim([0, class_time["count"].max()+1000])
 
 plt.title(f"Infrastructure Detected", fontsize = 18)
-plt.savefig('wind_timeseries', dpi = 300)
+plt.savefig('infra_label_timeseries', dpi = 300)
 plt.show()
 
 # %% [markdown]
-# ## Global timeseries using median monthly detections
-
-# %%
-median_month = pd.read_gbq(
-'''
-with 
-
-all_wind_polygons as (
-  select 
-    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
-  from 
-  `proj_global_sar.infra_wind_regions`),
-
-reclassified_infra as (
-  select 
-  id, date, lon, lat,
-  if( label = 'unknown', 'other', label) as label
-  from
-  `world-fishing-827.proj_global_sar.infrastructure_reclassified_v20230222`
-),
-
-detections_labeled as (
-SELECT 
-  detect_id,
-  detect_lon as lon,
-  detect_lat as lat,
-  extract( date from midpoint) detect_date,
-  if(b.label is null, c.label, b.label) label,
-  if( 
-     array_length(ISO_TER1)>0, 
-     if(ISO_TER1[ordinal(1)]="", "None",ISO_TER1[ordinal(1)] ),   
-    'None') iso3
-FROM 
-  `world-fishing-827.proj_global_sar.infrastructure_repeat_cat_6m_v20220805` a
-left join
-  reclassified_infra b
-on (detect_lon = lon and detect_lat = lat)
-left join (select detect_id, label 
-from `proj_global_sar.composite_ids_labeled_v20220708`) c
-using (detect_id)
-where detect_id is not null
-and not (detect_lat between -57.8 and -35.05 and detect_lon between -87.98 and -52.54)  -- argentina_chile 
-and not (detect_lat between -58.03 and -50.4 and detect_lon between -45.38 and -27.77)  -- south_atlantic 
-and not (detect_lat between -46.1 and -33.7 and detect_lon between 136.9 and 151.4)  -- se_australia 
-and not (detect_lat between 60.6 and 71.5 and detect_lon between -8.3 and 16.0)  -- norway_s 
-and not (detect_lat between 65.96 and 90 and detect_lon between -4.96 and 30.0)  -- norway_n 
-and not (detect_lat between 50.8 and 90 and detect_lon between -118.2 and -48.6)  -- canada_ne 
-and not (detect_lat between 65.2 and 90 and detect_lon between -178.0 and -110.9)  -- alaska_n 
-and not (detect_lat between 62.4 and 90 and detect_lon between 33.3 and 179.1)  -- russia_n 
-and not (detect_lat between 8.8958 and 11.0153 and detect_lon between -72.2486 and -70.8539)  -- lake_maracaibo 
-),
-
-final_detections as (
-  select * from detections_labeled
-  where label in ('oil', 'probable_oil', 'wind', 'probable_wind', 'other')),
-
-wind_region as (
-select 
-  detect_id,
-  detect_date,
-  label,
-  iso3,
-  "inside_all_wind_polygons" as region,
-from 
-  final_detections
-cross join
-  all_wind_polygons
-where  
-  st_contains(geometry,
-             ST_GEOGPOINT(lon,lat))
-and label in ('wind', 'probable_wind')
-),
-
-detections_outside_wind_regions as (
-select 
-  detect_id,
-  detect_date,
-  label,
-  iso3,
-  "outside_all_wind_polygons" as region,
-from 
-  final_detections
-where 
- detect_id not in (select detect_id from wind_region)
-),
-
-unioned_wind
- as (
-select * from wind_region
-union all
-select * from detections_outside_wind_regions),
-
-wind_detects as (
-select detect_date, wind, probable_wind, region from
-( select
-detect_date,
-sum(if(label='wind',1,0)) wind,
-sum(if(label='probable_wind',1,0)) probable_wind,
-region
-from unioned_wind
-where iso3 = 'GBR'
-group by detect_date, region
-order by detect_date)),
-
-
-wind_detect_eez as (
-select * except (region) from wind_detects
-where region = 'inside_all_wind_polygons')
-
-
-select 
-distinct
-DATE(extract( year from detect_date), extract( month from detect_date),01) year_month,
-PERCENTILE_CONT(wind, 0.5) OVER(partition by extract( year from detect_date), extract( month from detect_date)) +
-PERCENTILE_CONT(probable_wind, 0.5) OVER(partition by extract( year from detect_date), extract( month from detect_date)) AS wind_count_median
-from 
-wind_detect_eez
-order by year_month desc
-
-'''
-
-
-)
-
-# %%
-median_month
-
-# %%
-mpl.rc('xtick', labelsize=16) 
-mpl.rc('ytick', labelsize=16) 
-fig, ax = plt.subplots(figsize=(20, 6))
-# ax.plot(eez["date"].tolist(), eez["count"].tolist())
-median_month.plot(x = 'year_month', y = 'wind_count_median', kind="line", ax=ax, label='wind', linewidth = 4)
-
-plt.legend(fontsize=20)
-ax.set_ylim([0, 3000])
-
-plt.title(f"monthly Infrastructure Detected", fontsize = 18)
-plt.savefig('wind_timeseries_monthly_median_gbr', dpi = 300)
-plt.show()
-
-# %% [markdown]
-# ## Fit a line to the data
-
-# %%
-# create an evenly spaced line that represents the dates
-wind_x_values = list(range(1,62))
-wind_y_values = wind_time.loc[:,'wind'].to_numpy().astype(float)
-
-# %%
-t = pd.date_range(start='2017-01-01',
-                  end='2031-12-31',
-                  periods=180)
-
-# %%
-new_x = list(range(1,181))
-
-# %%
-polynomial = np.polyfit(wind_x_values, wind_y_values, 2)
-wind_poly_eqn = np.poly1d(polynomial)
-wind_y_hat = wind_poly_eqn(wind_x_values)
-new_y_hat = wind_poly_eqn(new_x)
-
-# %%
-import datetime
-plt.figure(figsize=(20,6))
-
-plt.plot(t, new_y_hat)
-
-plt.plot(list(wind_time.loc[:, "detect_date"]), list(wind_time.loc[:,"wind"]), "ro")
-plt.plot(list(wind_time.loc[:, "detect_date"]), wind_y_hat, label = 'CHN Wind')
-
-
-
-# plt.legend(fontsize=14)
-# plt.title('CHN and GBR wind fitted line')
-plt.ylabel('Count', size = 18)
-plt.xlabel('Date', size = 18)
-plt.xlim([datetime.date(2017, 1, 1), datetime.date(2031, 12, 31)])
-# plt.ylim(0,15000)
-plt.savefig("quadratic_wind.png", dpi = 300)
-
-# %% [markdown]
-# ## Percent of wind in EEZ
-
-# %%
-q = '''
-
-with 
-
-all_wind_polygons as (
-  select 
-    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
-  from 
-  `proj_global_sar.infra_wind_regions`),
-
-reclassified_infra as (
-  select 
-  id, date, lon, lat,
-  if( label = 'unknown', 'other', label) as label
-  from
-  `world-fishing-827.proj_global_sar.infrastructure_reclassified_v20230222`
-),
-
-not_infra as (
-SELECT
-distinct
-  detect_id,
-FROM
-  (select detect_id,
-detect_lon,
-detect_lat,
-FROM 
-`world-fishing-827.proj_global_sar.infrastructure_repeat_cat_6m_v20220805` 
-where midpoint = '2021-10-01')
-CROSS JOIN
-  (SELECT
-  ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
-FROM
-  `proj_global_sar.skytruth_review_error_not_infra`)
-WHERE
-  ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat))),
-
-detections_labeled as (
-SELECT 
-  detect_id,
-  detect_lon as lon,
-  detect_lat as lat,
-  extract( date from midpoint) detect_date,
-  if(b.label is null, c.label, b.label) label,
-  if( 
-     array_length(ISO_TER1)>0, 
-     if(ISO_TER1[ordinal(1)]="", "None",ISO_TER1[ordinal(1)] ),   
-    'None') iso3
-FROM 
-  `world-fishing-827.proj_global_sar.infrastructure_repeat_cat_6m_v20220805` a
-left join
-  reclassified_infra b
-on (detect_lon = lon and detect_lat = lat)
-left join (select detect_id, label 
-from `proj_global_sar.composite_ids_labeled_v20220708`) c
-using (detect_id)
-where detect_id is not null
-and detect_id not in (select detect_id from not_infra where detect_id is not null)
-and not (detect_lat between -57.8 and -35.05 and detect_lon between -87.98 and -52.54)  -- argentina_chile 
-and not (detect_lat between -58.03 and -50.4 and detect_lon between -45.38 and -27.77)  -- south_atlantic 
-and not (detect_lat between -46.1 and -33.7 and detect_lon between 136.9 and 151.4)  -- se_australia 
-and not (detect_lat between 60.6 and 71.5 and detect_lon between -8.3 and 16.0)  -- norway_s 
-and not (detect_lat between 65.96 and 90 and detect_lon between -4.96 and 30.0)  -- norway_n 
-and not (detect_lat between 50.8 and 90 and detect_lon between -118.2 and -48.6)  -- canada_ne 
-and not (detect_lat between 65.2 and 90 and detect_lon between -178.0 and -110.9)  -- alaska_n 
-and not (detect_lat between 62.4 and 90 and detect_lon between 33.3 and 179.1)  -- russia_n 
-and not (detect_lat between 8.8958 and 11.0153 and detect_lon between -72.2486 and -70.8539)  -- lake_maracaibo 
-),
-
-final_detections as (
-  select * from detections_labeled
-  where label in ('wind', 'probable_wind')
-),
-
-wind_region as (
-select 
-  detect_id,
-  detect_date,
-  label,
-  iso3,
-  "inside_all_wind_polygons" as region,
-from 
-  final_detections
-cross join
-  all_wind_polygons
-where  
-  st_contains(geometry,
-             ST_GEOGPOINT(lon,lat))
-and label in ('wind', 'probable_wind')
-),
-
-detections_outside_wind_regions as (
-select 
-  detect_id,
-  detect_date,
-  label,
-  iso3,
-  "outside_all_wind_polygons" as region,
-from 
-  final_detections
-where 
- detect_id not in (select detect_id from wind_region)
-),
-
-unioned_wind
- as (
-select * from wind_region
-union all
-select * from detections_outside_wind_regions),
-
-wind_detects as (
-select * except(iso3, region),iso3, region from
-( select
-detect_date,
-sum(if(label='wind',1,0)) wind,
-sum(if(label='probable_wind',1,0)) probable_wind,
-iso3,
-region
-from unioned_wind
-group by detect_date, region, iso3
-order by detect_date)),
-
-wind_detect_eez as (
-select * except (region) from wind_detects
-where extract (year from detect_date) = 2021
-and region = 'inside_all_wind_polygons'),
-
-final2 as (
-select 
-distinct
-iso3,
-PERCENTILE_CONT(wind, 0.5) OVER(partition by iso3) AS wind_count_median,
-PERCENTILE_CONT(probable_wind, 0.5) OVER(partition by iso3) AS probable_wind_count_median
-from 
-wind_detect_eez
-order by wind_count_median desc)
-
-
-select iso3, 
-wind_count_median + probable_wind_count_median as total_wind,
-round((wind_count_median + probable_wind_count_median) * 100 / sum((wind_count_median + probable_wind_count_median)) over ()) as perc 
-from final2
-order by perc desc
-
-'''
-
-eez_perc = pd.read_gbq(q)
-
-# %%
-eez_perc
-
-# %% [markdown]
-# ### Timeseries of wind in different eezs
+# ## Continent/ EEZ bar chart
 
 # %%
 q = f'''
 with 
 
+all_oil_polygons as (
+  select 
+    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
+  from 
+  proj_global_sar.oil_areas),
+
 all_wind_polygons as (
   select 
     ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
   from 
-  `proj_global_sar.infra_wind_regions`),
+  `world-fishing-827.proj_global_sar.infra_wind_regions`),
 
 reclassified_infra as (
   select 
@@ -557,8 +394,8 @@ SELECT
   if(b.label is null, c.label, b.label) label,
   if( 
      array_length(ISO_TER1)>0, 
-     if(ISO_TER1[ordinal(1)]="", "None",ISO_TER1[ordinal(1)] ),
-    'None') iso3,
+     if(ISO_TER1[ordinal(1)]="", "None",ISO_TER1[ordinal(1)] ),   
+    'None') iso3
 FROM 
   `world-fishing-827.proj_global_sar.infrastructure_repeat_cat_6m_v20220805` a
 left join
@@ -568,6 +405,7 @@ left join (select detect_id, label
 from `proj_global_sar.composite_ids_labeled_v20220708`) c
 using (detect_id)
 where detect_id is not null
+
 and not (detect_lat between -57.8 and -35.05 and detect_lon between -87.98 and -52.54)  -- argentina_chile 
 and not (detect_lat between -58.03 and -50.4 and detect_lon between -45.38 and -27.77)  -- south_atlantic 
 and not (detect_lat between -46.1 and -33.7 and detect_lon between 136.9 and 151.4)  -- se_australia 
@@ -581,8 +419,8 @@ and not (detect_lat between 8.8958 and 11.0153 and detect_lon between -72.2486 a
 
 final_detections as (
   select * from detections_labeled
-  where label in ('oil', 'probable_oil', 'wind', 'probable_wind', 'other')),
-
+  where label in ('oil', 'wind', 'other')
+),
 
 wind_region as (
 select 
@@ -598,56 +436,252 @@ cross join
 where  
   st_contains(geometry,
              ST_GEOGPOINT(lon,lat))
-and label in ('wind', 'probable_wind')
-),
+and label = 'wind'),
 
-detections_outside_wind_regions as (
+oil_region as (
 select 
   detect_id,
   detect_date,
   label,
   iso3,
-  "outside_all_wind_polygons" as region,
+  "inside_all_oil_polygons" as region,
 from 
   final_detections
-where 
- detect_id not in (select detect_id from wind_region)
-),
+cross join
+  all_oil_polygons
+where  
+  st_contains(geometry,
+             ST_GEOGPOINT(lon,lat))
+and label = 'oil'),
 
-unioned_wind
- as (
-select * from wind_region
+detect_eez as (
+select * from (
+select * except(region) from oil_region
 union all
-select * from detections_outside_wind_regions),
+select * except(region) from wind_region
+union all (select detect_id, detect_date, label, iso3 from final_detections where label = 'other'))
+where extract (year from detect_date) = 2021),
 
-wind_detects as (
-  select
+
+final as (
+select
 detect_date,
-sum(if(label='wind',1,0)) wind,
-sum(if(label='probable_wind',1,0)) probable_wind,
 iso3,
-region
-from unioned_wind
-group by detect_date, region, iso3
-order by detect_date),
-
-wind_detect_eez as (
-select * except (region) 
-from wind_detects
-where region = 'inside_all_wind_polygons')
-
+sum(if(label='oil',1,0)) oil,
+sum(if(label='wind',1,0)) wind,
+sum(if(label='other',1,0)) other
+from detect_eez 
+group by 1,2
+order by 1)
 
 select 
 distinct
 iso3,
-DATE(extract( year from detect_date), extract( month from detect_date),01) year_month,
-PERCENTILE_CONT(wind, 0.5) OVER(partition by iso3, extract( year from detect_date), extract( month from detect_date)) +
-PERCENTILE_CONT(probable_wind, 0.5) OVER(partition by iso3, extract( year from detect_date), extract( month from detect_date)) AS wind_count_median
+PERCENTILE_CONT(oil, 0.5) OVER(partition by iso3) AS oil,
+PERCENTILE_CONT(wind, 0.5) OVER(partition by iso3) AS wind,
+PERCENTILE_CONT(other, 0.5) OVER(partition by iso3) AS other
 from 
-wind_detect_eez
-order by iso3, year_month desc
+final
+-- order by oil_count_median desc
+'''
+
+cont_counts = pd.read_gbq(q)
+
+# %%
+cont_counts
+
+# %%
+continents = {
+    'NA': 'North America',
+    'SA': 'South America',
+    'AS': 'Asia',
+    'OC': 'Australia',
+    'AF': 'Africa',
+    'EU': 'Europe'
+}
+
+def get_continent(x):
+    try:
+        return continents[country_alpha2_to_continent_code(pycountry.countries.get(alpha_3=x).alpha_2)]
+    except:
+        "None"
+
+# %%
+cont_counts = cont_counts.fillna(0)
+
+# %%
+cont_counts['continent'] = cont_counts.iso3.apply(get_continent)
+
+# %%
+df_cont_grouped = cont_counts.groupby(['continent']).sum().reset_index()
+
+# %%
+df_cont_grouped
+
+# %%
+fig1, axs = plt.subplots(ncols=2, nrows=3,figsize=(15, 8))
+plt.subplots_adjust(hspace = .3, wspace=0.9)
 
 
+
+plt.rcParams['figure.facecolor'] = 'white'
+
+for e, (c, i) in enumerate(zip(['Africa', 'South America', 'Europe', 'North America', 'Asia',
+       'Australia'],axs.ravel())):
+    df_plot = cont_counts.loc[cont_counts['continent'] == c]
+    df_plot['total'] = df_plot['oil'] + df_plot['wind'] + df_plot['other']
+
+
+    df_plot = df_plot.sort_values("total", ascending=False)
+    df_plot = df_plot.head(10)
+    df_plot = df_plot.drop(['total', 'continent'], axis = 1).set_index('iso3')
+
+    df_plot.plot(kind='barh', stacked=True, ax = i, figsize=(12, 11), width = .8).invert_yaxis()
+
+    i.legend(frameon=False)
+    if e != 0:
+        i.get_legend().remove()
+    i.set(ylabel=None)
+    i.set_title(f"{c}", size = 16)
+    i.grid(b=None)
+
+# plt.tight_layout()
+plt.subplots_adjust(wspace=.2)
+plt.suptitle('Oil, Wind, and Other Infrastructure Detections', size = 18, y = .93)
+
+plt.savefig('all_infra_eez.png', bbox_inches="tight", dpi = 300)
+plt.show()
+
+# %% [markdown]
+# ### Summarize by continent
+
+# %%
+cont_sum = cont_counts[['continent', 'oil', 'other', 'wind']]
+cont_sum_grouped = cont_sum.groupby(['continent']).sum().reset_index()
+
+# %%
+cont_sum_grouped
+
+# %%
+sns.set_style("whitegrid")
+sns.set(rc={"figure.figsize":(9, 6)})
+cont_sum_grouped.set_index('continent').plot(kind='bar', stacked=True)
+plt.xticks(rotation= 40)
+plt.xticks(fontsize=16)
+plt.yticks(fontsize=16)
+plt.title('infra count midpoint 2021-10-01', size = 18 )
+plt.savefig('infra_label_count_single_date_', dpi=300)
+plt.show()
+
+# %% [markdown]
+# ### Plot timeseries by continent
+
+# %%
+q = f'''
+
+with 
+
+all_oil_polygons as (
+  select 
+    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
+  from 
+  proj_global_sar.oil_areas),
+
+all_wind_polygons as (
+  select 
+    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
+  from 
+  `world-fishing-827.proj_global_sar.infra_wind_regions`),
+
+reclassified_infra as (
+  select 
+  id, date, lon, lat,
+  if( label = 'unknown', 'other', label) as label
+  from
+  `world-fishing-827.proj_global_sar.infrastructure_reclassified_v20230222`
+),
+
+detections_labeled as (
+SELECT 
+  detect_id,
+  detect_lon as lon,
+  detect_lat as lat,
+  extract( date from midpoint) detect_date,
+  if(b.label is null, c.label, b.label) label,
+  if( 
+     array_length(ISO_TER1)>0, 
+     if(ISO_TER1[ordinal(1)]="", "None",ISO_TER1[ordinal(1)] ),   
+    'None') iso3
+FROM 
+  `world-fishing-827.proj_global_sar.infrastructure_repeat_cat_6m_v20220805` a
+left join
+  reclassified_infra b
+on (detect_lon = lon and detect_lat = lat)
+left join (select detect_id, label 
+from `proj_global_sar.composite_ids_labeled_v20220708`) c
+using (detect_id)
+where detect_id is not null
+
+and not (detect_lat between -57.8 and -35.05 and detect_lon between -87.98 and -52.54)  -- argentina_chile 
+and not (detect_lat between -58.03 and -50.4 and detect_lon between -45.38 and -27.77)  -- south_atlantic 
+and not (detect_lat between -46.1 and -33.7 and detect_lon between 136.9 and 151.4)  -- se_australia 
+and not (detect_lat between 60.6 and 71.5 and detect_lon between -8.3 and 16.0)  -- norway_s 
+and not (detect_lat between 65.96 and 90 and detect_lon between -4.96 and 30.0)  -- norway_n 
+and not (detect_lat between 50.8 and 90 and detect_lon between -118.2 and -48.6)  -- canada_ne 
+and not (detect_lat between 65.2 and 90 and detect_lon between -178.0 and -110.9)  -- alaska_n 
+and not (detect_lat between 62.4 and 90 and detect_lon between 33.3 and 179.1)  -- russia_n 
+and not (detect_lat between 8.8958 and 11.0153 and detect_lon between -72.2486 and -70.8539)  -- lake_maracaibo 
+),
+
+final_detections as (
+  select * from detections_labeled
+  where label in ('oil', 'wind', 'other')
+),
+
+wind_region as (
+select 
+  detect_id,
+  detect_date,
+  label,
+  iso3,
+  "inside_all_wind_polygons" as region,
+from 
+  final_detections
+cross join
+  all_wind_polygons
+where  
+  st_contains(geometry,
+             ST_GEOGPOINT(lon,lat))
+and label = 'wind'),
+
+oil_region as (
+select 
+  detect_id,
+  detect_date,
+  label,
+  iso3,
+  "inside_all_oil_polygons" as region,
+from 
+  final_detections
+cross join
+  all_oil_polygons
+where  
+  st_contains(geometry,
+             ST_GEOGPOINT(lon,lat))
+and label = 'oil'),
+
+detect_eez as (
+select * from (
+select * except(region) from oil_region
+union all
+select * except(region) from wind_region
+union all (select detect_id, detect_date, label, iso3 from final_detections where label = 'other')))
+
+
+select detect_date as date, label, iso3, count(*) as count
+from detect_eez
+group by 1,2,3
+order by 1
 '''
 eez = pd.read_gbq(q)
 
@@ -655,114 +689,84 @@ eez = pd.read_gbq(q)
 eez
 
 # %%
-eez_grouped = eez[['iso3', 'wind_count_median']].groupby('iso3').sum().sort_values('wind_count_median', ascending=False)[:10].reset_index()
-top_eez = eez_grouped['iso3']
+eez['continent']  = eez.iso3.apply(get_continent)
 
 # %%
-top_eez
+eez
+
+# %%
+cont_timeseries = eez.drop(['iso3'], axis=1)
+
+# %%
+cont_timeseries = cont_timeseries.groupby(['date', 'label', 'continent']).sum().reset_index()
+
+# %%
+cont = eez.continent.dropna().unique()
+
+# %%
+cont
+
+# %%
+for i in cont:
+    df = cont_timeseries.loc[cont_timeseries['continent'] == i]
+    fig, ax = plt.subplots(figsize=(20, 6))
+    for label, table in df.groupby('label'):
+        table.plot(x = 'date', y = 'count', kind="line", ax=ax, label=label, linewidth = 4)
+
+    plt.legend(fontsize=20)
+    ax.set_ylim([0, df["count"].max()+1000])
+
+    plt.title(f"{i} Infrastructure", fontsize = 18)
+    plt.savefig(f'{i}_infra_label_timeseries', dpi = 300)
+    plt.show()
+
+# %% [markdown]
+# ## Timeseries of infra by class in different eezs
+
+# %%
+eez_grouped = eez[['iso3', 'count']].groupby('iso3').sum().sort_values('count', ascending=False)[:10].reset_index()
+top_eez = eez_grouped['iso3']
+
+# %% [markdown]
+# ### Percent Change for top eez
 
 # %%
 for i in top_eez:
     df = eez.loc[eez['iso3'] == i]
 
-    wind_change = ((df['wind_count_median'].iloc[-0] - df['wind_count_median'].iloc[-1]) / df['wind_count_median'].iloc[-1]) * 100
+    oil = df.loc[df['label'] == 'oil']
+    wind = df.loc[df['label'] == 'wind']
+    other = df.loc[df['label'] == 'other']
+
+    if not oil.empty:
+        oil_change = (((oil['count'].iloc[-1] - oil['count'].iloc[0]) / oil['count'].iloc[0]) * 100)
+    if not wind.empty:
+        wind_change = (((wind['count'].iloc[-1] - wind['count'].iloc[0]) / wind['count'].iloc[0]) * 100)
+    if not other.empty:
+        other_change = (((other['count'].iloc[-1] - other['count'].iloc[0]) / other['count'].iloc[0]) * 100)
+
 
     print (i)
-    
-    print(f'Wind percent change = {round(wind_change,2)}')
+    print(f'Oil Percent Change = {round(oil_change,2)}')
+    print(f'Wind Percent Change = {round(wind_change,2)}')
+    print(f'Other Percent Change = {round(other_change,2)}\n')
 
 # %%
 for i in top_eez:
     df = eez.loc[eez['iso3'] == i]
     fig, ax = plt.subplots(figsize=(20, 6))
-    df.plot(x = 'year_month', y = 'wind_count_median', kind="line", ax=ax, label='wind', linewidth = 4)
+    for label, table in df.groupby('label'):
+        table.plot(x = 'date', y = 'count', kind="line", ax=ax, label=label, linewidth = 4)
 
     plt.legend(fontsize=20)
-    ax.set_ylim([0, df["wind_count_median"].max()+1000])
+    ax.set_ylim([0, df["count"].max()+1000])
 
-    plt.title(f"{i} wind time series", fontsize = 18)
-    plt.savefig(f'{i}_infra_wind_timeseries', dpi = 300)
+    plt.title(f"{i} infrastructure", fontsize = 18)
+    # plt.savefig(f'{i}_infra_label_timeseries', dpi = 300)
     plt.show()
 
 # %%
-top_eez_chn_gbr = ['CHN', 'GBR']
 
 # %%
-fig, ax = plt.subplots(figsize=(20, 6))
-
-for i in top_eez_chn_gbr:
-    df = eez.loc[eez['iso3'] == i]
-    df.plot(x = 'year_month', y = 'wind_count_median', kind="line", ax=ax, label=i, linewidth = 4)
-
-    plt.legend(fontsize=20)
-    # ax.set_ylim([0, df["count"].max()+1000])
-
-plt.title(f"CHN GBR Wind Infra", fontsize = 18)
-plt.savefig(f'chn_gbr_infra_wind_timeseries', dpi = 300)
-plt.show()
-
-# %% [markdown]
-# ### Smooth the line
 
 # %%
-gbr = eez.loc[eez['iso3'] == 'GBR']
-chn = eez.loc[eez['iso3'] == 'CHN']
-
-# %%
-gbr = gbr[['year_month', 'wind_count_median']].set_index('year_month')
-chn = chn[['year_month', 'wind_count_median']].set_index('year_month')
-
-# %%
-gbr_wind_rolmean = gbr.rolling(window=3).median() 
-chn_wind_rolmean = chn.rolling(window=3).median() 
-
-# %%
-fig, ax = plt.subplots(figsize=(16, 4))
-ax.plot(gbr_wind_rolmean, label='GBR Wind')
-ax.plot(chn_wind_rolmean, label='CHN Wind')
-ax.legend()
-
-# %% [markdown]
-# ### Summarize by wind region
-
-# %%
-q = f'''
-
-
-with 
-
-all_wind_polygons as (
-  select 
-  region,
-    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) as geometry  
-  from 
-  `proj_global_sar.infra_wind_regions`),
-
-reclassified_infra as (
-  select 
-  distinct
-  id, lon, lat,
-  label
-  from
-  `world-fishing-827.proj_global_sar.infrastructure_reclassified_v20230222`
-  where label in ('wind', 'possible_wind')
-)
-
-
-select 
-count(*)/ 10828 num ,
-  region,
-from 
-  reclassified_infra
-cross join
-  all_wind_polygons
-where  
-  st_contains(geometry,
-             ST_GEOGPOINT(lon,lat))
-  group by region
-
-'''
-wind_reg = pd.read_gbq(q)
-
-# %%
-wind_reg

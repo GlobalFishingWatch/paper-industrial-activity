@@ -9,7 +9,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: dark_targets
+#     display_name: rad
 #     language: python
 #     name: python3
 # ---
@@ -40,7 +40,7 @@ import pyseas.contrib as psc
 import pyseas.maps as psm
 # import squarify
 import matplotlib.pyplot as plt
-import prj_global_sar_infra.infra_modules as im
+import undisclosed_industrial.infra_modules as im
 
 import pycountry
 from pycountry_convert import (
