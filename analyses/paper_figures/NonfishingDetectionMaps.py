@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.13.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -41,7 +41,7 @@ import skimage
 
 # %%
 # Load data file generated in Figure2v5.py
-df = pd.read_feather('../../data/all_detections_matched_rand.feather', use_threads=True)
+df = pd.read_feather('../data/all_detections_matched_rand.feather', use_threads=True)
 df.head()
 
 # %%
@@ -55,104 +55,6 @@ df_nonf = df.loc[df.category_rand.isin(nonfish)]
 f = lambda x: 1 if 'matched' in x else 0
 df_fish.loc[:, 'is_matched'] = df_fish.category_rand.map(f)
 df_nonf.loc[:, 'is_matched'] = df_nonf.category_rand.map(f)
-
-
-# %%
-def hex_to_rgb(value):
-    """Converts hex to rgb colours.
-
-    value: string of 6 characters representing a hex colour.
-    Returns: list length 3 of RGB values
-    """
-    value = value.strip("#")  # removes hash symbol if present
-    lv = len(value)
-    return tuple(int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3))
-
-
-def rgb_to_dec(value):
-    """Converts rgb to decimal colours (divides each value by 256).
-
-    value: list (length 3) of RGB values
-    Returns: list (length 3) of decimal values
-    """
-    return [v / 256 for v in value]
-
-
-def get_continuous_cmap(hex_list, float_list=None, n=256):
-    """Create a color map that can be used in heat map.
-
-    If float_list is not provided, colour map graduates
-        linearly between each color in hex_list.
-    If float_list is provided, each color in hex_list is
-        mapped to the respective location in float_list.
-
-    Parameters:
-        hex_list: list of hex code strings
-        float_list: list of floats between 0 and 1, same length
-            as hex_list. Must start with 0 and end with 1.
-
-    Returns:
-        colour map
-    """
-    rgb_list = [rgb_to_dec(hex_to_rgb(i)) for i in hex_list]
-    if float_list:
-        pass
-    else:
-        float_list = list(np.linspace(0, 1, len(rgb_list)))
-
-    cdict = dict()
-    for num, col in enumerate(["red", "green", "blue"]):
-        col_list = [
-            [float_list[i], rgb_list[i][num], rgb_list[i][num]]
-            for i in range(len(float_list))
-        ]
-        cdict[col] = col_list
-    cmp = mpcolors.LinearSegmentedColormap("my_cmp", segmentdata=cdict, N=n)
-    return cmp
-
-
-palette3 = ['#FF6855', '#E19664', '#C1C674', '#57E69B', '#00FFBB']  # OrTq1
-# palette2 = ['#FF705E', '#FF9046', '#CAD33D', '#46FF9E', '#00FFBB']  # OrTq2
-# palette = ['#FF5DB2', '#FF9063', '#BEC35E', '#3EF35A', '#1EE9B3']  # PkTq
-# palette3 = ['#FF5DB2', '#FF9063', '#3EF35A', '#1EE9B3']  # PkTq mod
-# palette2 = ["#ff6854", "#FF705E", "#46FF9E", "#00FFBB"]  # OrTq2 mod
-# palette2 = ['#FF705E', '#FF9046', '#CAD33D', '#21FFFF', '#21FFFF']  # OrBu
-# palette3 = ['#FFFF0D', '#21FFFF']
-# palette3 = ['#21FFFF', '#FF5DB2']
-
-
-palette0 = ["#4493EC", "#EA6E42"] # Blu-Orange
-palette2 = ["#ca0020", "#f4a582","#f7f7f7","#92c5de","#0571b0",]  # Red-Blue
-# palette = ["#7b3294","#c2a5cf","#f7f7f7","#a6dba0","#008837",] # Green-Purple
-
-palette = [
-# '#bae4bc',
-'#7bccc4',
-'#43a2ca',
-'#0868ac',
-'#000000',
-]
-
-palette1 = [
-'#b2182b',
-# '#d6604d',
-# '#f4a582',
-# '#fddbc7',
-# '#f7f7f7',
-# '#d1e5f0',
-# '#92c5de',
-# '#4393c3',
-'#2166ac',
-]
-
-# palette1 = ['#1D8F64', '#DE0077']
-# palette2 = ['#40A33A', '#843692']
-palette4 = ['#921637', '#FFFFD9', '#12275E']
-
-mycmap0 = get_continuous_cmap(palette0, n=2)
-mycmap1 = get_continuous_cmap(palette1, n=2)
-mycmap2 = get_continuous_cmap(palette2)
-mycmap4 = get_continuous_cmap(palette4)
 
 # %%
 df_fish = df_fish.fillna(0)
@@ -444,4 +346,6 @@ with psm.context(psm.styles.light):
             # break
 
 if SAVE:
-    plt.savefig("../../figures/fig2v2sup2.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
+    plt.savefig("figures/fig2v2sup2.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
+
+# %%

@@ -7,15 +7,12 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.13.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
-
-# %% [markdown]
-# # DELETE??? NOT NEEDED???
 
 # %%
 from datetime import datetime, timedelta
@@ -109,7 +106,5 @@ with psm.context(psm.styles.dark):
 
         # plt.savefig(f'{b}_trawler_vessel_activity.png', bbox_inches="tight", dpi = 300)
         plt.show()
-
-# %%
 
 # %%

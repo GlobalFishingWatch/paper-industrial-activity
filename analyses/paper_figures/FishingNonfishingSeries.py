@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.13.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -79,115 +79,9 @@ def get_country(x):
 
 
 # %%
-def hex_to_rgb(value):
-    """Converts hex to rgb colours.
-
-    value: string of 6 characters representing a hex colour.
-    Returns: list length 3 of RGB values
-    """
-    value = value.strip("#")  # removes hash symbol if present
-    lv = len(value)
-    return tuple(
-        int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3)
-    )
-
-
-def rgb_to_dec(value):
-    """Converts rgb to decimal colours (divides each value by 256).
-
-    value: list (length 3) of RGB values
-    Returns: list (length 3) of decimal values
-    """
-    return [v / 256 for v in value]
-
-
-def get_continuous_cmap(hex_list, float_list=None, n=256):
-    """Create a color map that can be used in heat map.
-
-    If float_list is not provided, colour map graduates
-        linearly between each color in hex_list.
-    If float_list is provided, each color in hex_list is
-        mapped to the respective location in float_list.
-
-    Parameters:
-        hex_list: list of hex code strings
-        float_list: list of floats between 0 and 1, same length
-            as hex_list. Must start with 0 and end with 1.
-
-    Returns:
-        colour map
-    """
-    rgb_list = [rgb_to_dec(hex_to_rgb(i)) for i in hex_list]
-    if float_list:
-        pass
-    else:
-        float_list = list(np.linspace(0, 1, len(rgb_list)))
-
-    cdict = dict()
-    for num, col in enumerate(["red", "green", "blue"]):
-        col_list = [
-            [float_list[i], rgb_list[i][num], rgb_list[i][num]]
-            for i in range(len(float_list))
-        ]
-        cdict[col] = col_list
-    cmp = mpcolors.LinearSegmentedColormap("my_cmp", segmentdata=cdict, N=n)
-    return cmp
-
-
-# https://www.learnui.design/tools/data-color-picker.html
-palette1 = [
-    "#003f5c",
-    "#58508d",
-    "#bc5090",
-    "#ff6361",
-    "#ffa600",
-]
-palette2 = [
-    # '#003f5c',
-    "#444e86",
-    "#955196",
-    "#dd5182",
-    "#ff6e54",
-    "#ffa600",
-]
-palette3 = [
-    "#004c6d",
-    "#346888",
-    "#5886a5",
-    "#7aa6c2",
-    "#9dc6e0",
-    # '#c1e7ff',
-]
-palette4 = [
-    "#90e28d",
-    "#2cbd9b",
-    "#00949b",
-    "#006a87",
-    "#1f4260",
-]
-palette5 = [
-    "#374c80",
-    "#7a5195",
-    "#bc5090",
-    "#ef5675",
-    "#ff764a",
-]
-
-mycmap1 = get_continuous_cmap(palette1)
-mycmap2 = get_continuous_cmap(palette2)
-mycmap3 = get_continuous_cmap(palette3)
-mycmap4 = get_continuous_cmap(palette4)
-mycmap5 = get_continuous_cmap(palette5)
-
-# %%
 # NOTE: feather can store date objects, CSV dates need to be parsed (str -> date)
-f = "../../data/24day_rolling_augmented_v20230220.feather"
-df1 = pd.read_feather(f) #, parse_dates=["rolling_date"])
-
-# %%
-
-# %%
-df1.rolling_date = df1.rolling_date.apply(lambda x: datetime.datetime(x.year,x.month,x.day))
+f = "../data/24day_rolling_augmented_v20230220.csv.zip"
+df1 = pd.read_csv(f, parse_dates=["rolling_date"])
 
 # %%
 # Crop beguining and end data points
@@ -713,6 +607,6 @@ for ax in [ax1a, ax2a]:
 fig.align_labels()
 
 if SAVE:
-    plt.savefig("../../figures/fig3v2.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
+    plt.savefig("figures/fishing_nonfishing_series.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
 
 # %%

@@ -1,37 +1,14 @@
-# Notebooks in this folder and what they do
+## Notebooks of paper figures 
 
-### DistanceFromInfra.py
-
-### Figure1v2.py
-
-### Figure2Sup.py
-
-### Figure2v2.py
-
-### Figure2v3.py
-
-### Figure2v4.py
-
-### Figure2v5.py
-
-### Figure3v8.py
-
-### Figure4v3.py
-
-### FishingInteraction.py
-
-### GlobalMaps.py
- 
-### GlobalMapsHighRes.py
-
-### InfraBarplots.py
-
-### KoreaJapan.py
-
-### MPADarkFishing.py
-
-### MPAInfraMaps.py
-
-### OilTimeSeries.py
-
-### VesselDistFromInfra.py
+    .
+    ├── README.md                       # this file
+    ├── FishingNonfishingGlobalMaps.py  # Fig 1 in paper
+    ├── InfraGlobalMapsSeries.py        # Fig 2 in paper
+    ├── FishingDetectionMaps.py         # Fig 3 in paper
+    ├── FishingNonfishingSeries.py      # Fig 4 in paper
+    ├── NonfishingDetectionMaps.py      # Sup Fig 5 in paper
+    ├── MPAsAndInfraMaps.py             # Sup Fig 8 in paper
+    ├── InfraBarplots.py                # Sup Fig 9 in paper
+    ├── TopNationsOilSeries.py          # Sup Fig 10 in paper
+    ├── DistanceFromShoreInfraPlot.py   # Sup Fig 11 in paper
+    └── cmaps.py                        # custom colour maps 

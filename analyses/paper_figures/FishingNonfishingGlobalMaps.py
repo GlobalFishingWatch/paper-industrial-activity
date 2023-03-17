@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.13.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -36,6 +36,8 @@ import matplotlib.gridspec as gridspec
 from matplotlib.gridspec import GridSpec
 from datetime import datetime, timedelta
 
+from cmaps import *
+
 # %matplotlib inline
 plt.rcParams["savefig.dpi"] = 600
 
@@ -47,61 +49,6 @@ eliminated_locations = eliminate_ice_string()
 
 
 # %%
-def hex_to_rgb(value):
-    """Converts hex to rgb colours.
-
-    value: string of 6 characters representing a hex colour.
-    Returns: list length 3 of RGB values
-    """
-    value = value.strip("#")  # removes hash symbol if present
-    lv = len(value)
-    return tuple(
-        int(value[i : i + lv // 3], 16) for i in range(0, lv, lv // 3)
-    )
-
-
-def rgb_to_dec(value):
-    """Converts rgb to decimal colours (divides each value by 256).
-
-    value: list (length 3) of RGB values
-    Returns: list (length 3) of decimal values
-    """
-    return [v / 256 for v in value]
-
-
-def get_continuous_cmap(hex_list, float_list=None):
-    """Create a color map that can be used in heat map.
-
-    If float_list is not provided, colour map graduates
-        linearly between each color in hex_list.
-    If float_list is provided, each color in hex_list is
-        mapped to the respective location in float_list.
-
-    Parameters:
-        hex_list: list of hex code strings
-        float_list: list of floats between 0 and 1, same length
-            as hex_list. Must start with 0 and end with 1.
-
-    Returns:
-        colour map
-    """
-    rgb_list = [rgb_to_dec(hex_to_rgb(i)) for i in hex_list]
-    if float_list:
-        pass
-    else:
-        float_list = list(np.linspace(0, 1, len(rgb_list)))
-
-    cdict = dict()
-    for num, col in enumerate(["red", "green", "blue"]):
-        col_list = [
-            [float_list[i], rgb_list[i][num], rgb_list[i][num]]
-            for i in range(len(float_list))
-        ]
-        cdict[col] = col_list
-    cmp = mpcolors.LinearSegmentedColormap("my_cmp", segmentdata=cdict, N=256)
-    return cmp
-
-
 palette1 = [
     "#d7191c",
     "#fdae61",
@@ -167,24 +114,9 @@ mycmap5 = get_continuous_cmap(palette5)
 mycmap6 = get_continuous_cmap(palette6)
 mycmap7 = get_continuous_cmap(palette7)
 
-
-# %%
-def piecewise_constant_color_map(colors, name="pccm"):
-    """colors is list[tuple(float, float, float)]"""
-    breaks = np.linspace(0, 1.0, len(colors) + 1, endpoint=True)
-    arg = {"red": [], "green": [], "blue": []}
-    last_clr = colors[0]
-    colors = colors + [colors[-1]]
-    for i, clr in enumerate(colors):
-        arg["red"].append((breaks[i], last_clr[0], clr[0]))
-        arg["green"].append((breaks[i], last_clr[1], clr[1]))
-        arg["blue"].append((breaks[i], last_clr[2], clr[2]))
-        last_clr = clr
-    return mpcolors.LinearSegmentedColormap(name, arg)
-
-
+# Discrete cmap 
 rgb_list = [rgb_to_dec(hex_to_rgb(i)) for i in palette7]
-mycmap_discrete = piecewise_constant_color_map(rgb_list)
+mycmap_discrete = piecewise_constant_cmap(rgb_list)
 
 
 # %% [markdown]
@@ -274,13 +206,10 @@ def map_bivariate(
 scale = 5
 
 # %%
-# ls ../../data
-
-# %%
 # Load fishing data
 # df = pd.read_csv('../data/raster_10th_degree_v20230217.csv.zip')
-df = pd.read_feather('../../data/raster_5th_degree.feather')
-df_bars = pd.read_csv('../../data/vessels_bycontinent_v20230217.csv')
+df = pd.read_csv('../data/raster_5th_degree_v20230218.csv.zip')
+df_bars = pd.read_csv('../data/vessels_bycontinent_v20230217.csv')
 
 # %%
 df.head()
@@ -616,6 +545,6 @@ with psm.context(psm.styles.light):
     add_legend(ax3)
 
 if SAVE:
-    plt.savefig("../../figures/fig1v2b_5th.png", bbox_inches="tight", pad_inches=0, dpi=300)
+    plt.savefig("figures/fig1v2b_5th.png", bbox_inches="tight", pad_inches=0, dpi=300)
 
 # %%
