@@ -13,6 +13,7 @@ See paper for further description of the methods and outputs:
 ## Content
 
 **Codebase**
+
     .
     ├── README.md               # this file
     ├── config.yaml             # params and paths for detection run
@@ -50,12 +51,12 @@ See paper for further description of the methods and outputs:
 
 **Main classes**
 
-    `Params` - handles input parameters, files and table names
-    `Detector` - applies CFAR to a generic EE image object
-    `DetectorVessel` - applies `Detector` to a collection of scenes
-    `DetectorInfra` - applies `Detector` to an image composite
-    `DetectorInfraShore` - applies `DetectorInfra` to inshore/land area
-    `ExportFootprint` - applies `DetectorVessel` to get footprints only
+    Params              # handles input parameters, files and table names
+    Detector            # applies CFAR to a generic EE image object
+    DetectorVessel      # applies `Detector` to a collection of scenes
+    DetectorInfra       # applies `Detector` to an image composite
+    DetectorInfraShore  # applies `DetectorInfra` to inshore/land area
+    ExportFootprint     # applies `DetectorVessel` to get footprints only
 
 ## Examples
 
