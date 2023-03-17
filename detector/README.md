@@ -12,40 +12,50 @@ See paper for further description of the methods and outputs:
 
 ## Content
 
-**Classes**
+**Codebase**
+    .
+    ├── README.md               # this file
+    ├── config.yaml             # params and paths for detection run
+    ├── detect_vessels.py       # run a multi-scene vessel detector
+    ├── detect_scene.py         # run a single-scene detector
+    ├── detect_infra.py         # run a fixed-infrastructure detector
+    ├── detect_shore.py         # run an inshore detector
+    ├── export_foots.py         # run a footprint generator
+    ├── upload_detect.py        # download/process/upload detections
+    ├── upload_foots.py         # download/process/upload footprints
+    ├── core
+    │   ├── __init__.py
+    │   ├── checks.py           # name check helper functions
+    │   ├── cloud.py            # gcs and bq helper functions
+    │   ├── detector.py         # the various `Detector` classes
+    │   ├── footprint.py        # the `ExportFootprint` class
+    │   ├── gee.py              # functions to interact with GEE
+    │   ├── params.py           # the `Params` class
+    │   ├── ranges.py           # date, tile, and window range iterators
+    │   └── utils.py            # generic helper functions
+    ├── scripts
+    │   ├── eval_detect.py      # assess matched detections
+    │   ├── interp_ais.py       # get AIS positions close to a scene
+    │   ├── locate_sat.py       # calculate Sentinel-1 positions
+    │   ├── match_detect.py     # match detections to AIS
+    │   ├── match_detect.yaml
+    │   ├── rasterize_foot.py   # create overpass raster for N days
+    │   └── set_params.py       # replace/add params to PARAMS files
+    └── tests
+        ├── NOTES.txt
+        ├── figures
+        ├── plot_test_detect.py
+        ├── plot_test_predict.py
+        └── test_detect_vessel.py
 
-* `Params` - handles input parameters, files and table names
-* `Detector` - applies CFAR to a generic EE image object
-* `DetectorVessel` - applies `Detector` to a collection of scenes
-* `DetectorInfra` - applies `Detector` to an image composite
-* `DetectorInfraShore` - applies `DetectorInfra` to inshore/land area
-* `ExportFootprint` - applies `DetectorVessel` to get footprints only
+**Main classes**
 
-**Modules**
-
-* `detector.py` - the various `Detector` classes
-* `params.py` - the `Params` class
-* `footprint.py` - the `ExportFootprint` class
-* `gee.py` - functions to interact with GEE
-* `ranges.py` - date, tile, and window range iterators
-* `cloud.py` - gcs and bq helper functions
-* `utils.py` - generic helper functions
-* `checks.py` - name check helper functions
-
-**Scripts**
-
-* `detect_vessel.py` - run a vessel detector
-* `detect_infra.py` - run a fixed-infrastructure detector
-* `detect_shore.py` - run an inshore detector
-* `export_foot.py` - run a footprint generator
-* `upload_detect.py` - download/process/upload detections
-* `upload_foot.py` - download/process/upload footprints
-* `match_detect.py` - match detections to AIS
-* `eval_detect.py` - assess matched detections
-* `set_params.py` - replace/add params to PARAMS files
-* `rasterize_foot.py` - create overpass raster for N days
-* `interp_ais.py` - get AIS positions close to a scene
-* `locate_sat.py` - calculate Sentinel-1 positions
+    `Params` - handles input parameters, files and table names
+    `Detector` - applies CFAR to a generic EE image object
+    `DetectorVessel` - applies `Detector` to a collection of scenes
+    `DetectorInfra` - applies `Detector` to an image composite
+    `DetectorInfraShore` - applies `DetectorInfra` to inshore/land area
+    `ExportFootprint` - applies `DetectorVessel` to get footprints only
 
 ## Examples
 
