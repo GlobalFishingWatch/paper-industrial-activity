@@ -1,6 +1,6 @@
 # Infrastructure classification model
 
-A neural network to classify dual-channel SAR and four-channel optical thumbnails into "oil structure", "wind structure", "other structure", or "noise".
+A neural network to classify objects in dual-channel SAR and four-channel optical thumbnails as "oil structures", "wind structures", "other structures", or "noise".
 
 _See paper for further description of the data and the train-validation-test cycle._:
 
@@ -14,7 +14,7 @@ The model is a multi-input/single-output Convolutional Neural Network, consistin
 
 We train the network for 300 epochs using Adam with Weight Decay [7]. We perform three cycles of cosine annealing [8], reducing the learning rate from 5e-3 to 5e-6 and the weight decay from 5e-6 to 5e-9 each time. We use a batch size of 128 two- and four-channel 100 x 100 pixel images. For data augmentations, we adopt common schemes including shifts, flips, transpose, random rotations, and magnitude scaling.
 
-## Testing
+## Evaluation
 
 We test the model on a holdout set (20%) that is spatially segregated from the training and validation sets. We tested additional model versions – that differed in the type of regularization used (Drop Block [9] and Stochastic Depth [10]), loss function (Evidential Loss [11]), and input configuration (single mixed image stack vs two independent image stacks). Our best model achieved a combined F1 score of 0.99 (accuracy = 98.9%) for the multiclass problem.
 

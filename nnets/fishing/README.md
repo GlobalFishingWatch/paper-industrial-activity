@@ -1,6 +1,6 @@
 # Fishing and non-fishing classification model
 
-A neural network to classify 11-channel images (environmental rasters) into "fishing vessel" or "non-fishing vessel".
+A neural network to classify environmental rasters (11-channel images + a scalar length value) as "fishing vessels" or "non-fishing vessels".
 
 _See paper for further description of the data and the train-validation-test cycle._:
 
@@ -14,7 +14,7 @@ The model is a multi-input-mixed-data/single-output Convolutional Neural Network
 
 We train the network for 120 epochs using Adam with Weight Decay [7]. We perform three cycles of cosine annealing [8], reducing the learning rate from 5e-3 to 5e-6 and the weight decay from 5e-6 to 5e-9 each time. We use a batch size of 64 11-channel 100 x 100 pixel images. We normalize the data by the respective order of magnitude of each channel. For data augmentations, we adopt common schemes including flips, transpose, random rotations, coarse dropout, channel dropout, magnitude scaling and log transformation. We divide the training data into two spatially independent sets and train two independent models. Our final predictions result from a two-model ensemble. We also calibrate the prediction scores for three (fishing:non-fishing) labels ratios: 1:3, 1:1, 3:1, providing a possible range for the predictions.
 
-## Testing
+## Evaluation
 
 We test the models on a single holdout set (12%) that is spatially segregated from the two sets of training and validation data (one set per model). We tested additional model versions – that differed in the type of regularization used, such as Drop Block [9] and Stochastic Depth [10]. We chose standard Dropout for deployment based on its superior performance and simplicity. Our best model ensemble achieved a F1 score of 0.91 (accuracy = 90.5%) for the classification task. 
 

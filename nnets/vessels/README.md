@@ -1,6 +1,6 @@
 # Vessel classification and length regression model
 
-A neural network to classify dual-channel SAR thumbnails into "vessel" or "noise" and estimate the vessel's length.
+A neural network to classify objects in dual-channel SAR thumbnails as "vessels" or "noise" and estimate their length.
 
 _See paper for further description of the data and the train-validation-test cycle._:
 
@@ -14,7 +14,7 @@ The model is a single-input/multi-output Convolutional Neural Network, consistin
 
 We train the network for 300 epochs using Stochastic Gradient Descent with Momentum [5]. We perform three cycles of cosine annealing [cite], reducing the learning rate from 5e-3 to 5e-6 each time. We use a batch size of 16 dual-channel 80 x 80 pixel images with respective objects' lengths. For data augmentations, we adopt common schemes including shifts, flips, transpose, scaling and crop with associated length scaling.
 
-## Testing
+## Evaluation
 
 We test the model on a holdout set (20%) that is spatially segregated from the training and validation sets. We tested additional model versions – that differed in the type of regularization used (Drop Block [6]), loss function (Evidential Loss [7]), and shim layers prior the classification head. We also tested weighting samples by length classes. Our best model achieved a F1 score of 0.97 (accuracy = 97.5%) for the classification task and a R2 score of 0.84 (RMSE = 21.9 m, or about 1 image pixel) for the length estimation task.
 
