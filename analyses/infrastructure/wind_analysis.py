@@ -42,7 +42,7 @@ import pyseas.cm
 import pyseas.contrib as psc
 import pyseas.maps as psm
 
-import undisclosed_industrial.infra_modules as im
+import infra_modules as im
 
 # %load_ext autoreload
 # %autoreload 2
