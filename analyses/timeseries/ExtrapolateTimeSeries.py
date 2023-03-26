@@ -17,11 +17,24 @@
 import pandas as pd
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
-from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
+
+
+client: bigquery.Client = bigquery.Client(project="world-fishing-827")
+
+
+# Get the query templates
+import sys
+
+sys.path.append("../analyses_functions")
+from vessel_queries import *
+
+# ice string elimination
+from eliminate_ice_string import eliminate_ice_string
+
 eliminated_locations = eliminate_ice_string()
 
-client: bigquery.Client = bigquery.Client(project='world-fishing-827')
-from prj_global_sar_analysis.bigquery_helper_functions import query_to_table, update_table_description
+# biguquery helper functions
+from bigquery_helper_functions import query_to_table, update_table_description
 
 
 # +

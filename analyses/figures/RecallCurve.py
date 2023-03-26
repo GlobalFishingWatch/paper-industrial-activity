@@ -25,6 +25,13 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import proplot
 import numpy as np
+import matplotlib as mpl
+import proplot
+import matplotlib.dates as mdates
+mpl.rcParams["axes.spines.right"] = False
+mpl.rcParams["axes.spines.top"] = False
+plt.rcParams['figure.facecolor'] = 'white'
+plt.rcParams['axes.facecolor'] = 'white'
 
 # +
 q = '''with 
@@ -35,6 +42,14 @@ from `world-fishing-827.gfw_research.vi_ssvid_v20220401`
 where activity.overlap_hours < 24 
 -- and registry_info.best_known_length_m is not null
 ),
+
+
+definitely_in_scene as 
+(
+select scene_id, ssvid from proj_global_sar.likelihood_inside 
+where prob_inside > .99
+),
+
 
 extrap as (
 select * from 
@@ -48,13 +63,15 @@ within_footprint_1km,
 row_number() over(partition by ssvid, scene_id order by rand()) as row,
  scene_id 
  FROM `world-fishing-827.proj_sentinel1_v20210924.detect_foot_ext_ais`
+ join definitely_in_scene
+ using(ssvid,scene_id)
   WHERE DATE(_PARTITIONTIME) 
 between 
 "2017-01-01"
 and
 "2021-12-31" 
-and within_footprint
-and source = "AIS")
+and source = "AIS"
+and within_footprint_5km)
 where row = 1
 
 ),
@@ -163,54 +180,16 @@ plt.figure(figsize=(8,4),facecolor='white')
 d = df.groupby('length_m').sum()
 d['frac_matched3'] =  d.matched3/d.vessels
 plt.scatter(np.array(d.index.values),np.array(d.frac_matched3.values), label = "all vessels")
-d = df[df.min_distance_m == 1000]
-plt.scatter(d.length_m.values, d.frac_matched3.values, label = "well spaced vessels")
-plt.xlim(0,200)
-plt.legend()
-plt.xlabel("length, m")
-plt.ylabel("fraction detected")
-plt.title("recall as a function of length")
-
-
-plt.figure(figsize=(8,4),facecolor='white')
-d = df.groupby('length_m').sum()
-d['frac_matched3'] =  d.matched3/d.vessels
-plt.scatter(np.array(d.index.values),np.array(d.frac_matched3.values), label = "all vessels")
 plt.plot(np.array(d.index.values[1:]),np.array(d.frac_matched3.values[1:]))
 d = df[df.min_distance_m == 1000]
 plt.scatter(d.length_m.values, d.frac_matched3.values, label = "well spaced vessels")
 plt.plot(np.array(d.length_m.values[1:]), np.array(d.frac_matched3.values[1:]))
 plt.xlim(0,200)
 plt.legend(frameon=False)
-plt.xlabel("length, m")
-plt.ylabel("fraction detected")
-plt.title("recall as a function of length")
+plt.xlabel("Length, m")
+plt.ylabel("Fraction detected")
+plt.savefig("figures/recall.png")
 
-
-plt.figure(figsize=(8,4))
-d = df.groupby('length_m').sum()
-d['frac_matched3'] =  d.matched3/d.vessels
-plt.scatter(np.array(d.index.values),np.array(d.frac_matched3.values), label = "all vessels")
-d = df[df.min_distance_m == 1000]
-plt.scatter(d.length_m.values, d.frac_matched3.values, label = "well spaced vessels")
-plt.xlim(0,200)
-plt.legend()
-plt.xlabel("length, m")
-plt.ylabel("fraction detected")
-plt.title("recall as a function of length")
-plt
-
-plt.figure(figsize=(8,4),facecolor='white')
-d = df[(df.length_m >=5)].groupby('length_m').sum()
-d['frac_matched3'] =  d.matched3/d.vessels
-plt.plot(np.array(d.index.values),np.array(d.frac_matched3.values), label = "all vessels")
-d = df[(df.min_distance_m == 1000)&(df.length_m >=5)]
-plt.plot(np.array(d.length_m.values), np.array(d.frac_matched3.values), label = "well spaced vessels")
-plt.xlim(0,200)
-plt.legend()
-plt.xlabel("length, m")
-plt.ylabel("fraction detected")
-plt.title("recall as a function of length")
 
 df.matched3.sum()
 
@@ -218,9 +197,88 @@ df.matched3.sum()
 ## upload to bigquery to use in our recall estimates
 # df.to_gbq("proj_global_sar.s1recall", if_exists='replace')
 # -
+# # What fraction of vessels in the scenes are more than 1km spaced?
+
+# +
+q = '''with 
+vessel_info as (
+select ssvid,
+best.best_length_m,
+from `world-fishing-827.gfw_research.vi_ssvid_v20220401`
+where activity.overlap_hours < 24 
+-- and registry_info.best_known_length_m is not null
+),
 
 
+likelihood_in_scene as 
+(
+select prob_inside,scene_id, ssvid from proj_global_sar.likelihood_inside 
+),
 
+
+extrap as (
+select * from 
+(SELECT 
+ssvid,
+prob_inside,
+least(abs(delta_minutes1),abs(delta_minutes2)) delta_minutes,
+extract(year from _partitiontime) year,
+st_geogpoint(likely_lon, likely_lat) pos,
+within_footprint_5km,
+within_footprint_1km,
+row_number() over(partition by ssvid, scene_id order by rand()) as row,
+ scene_id 
+ FROM `world-fishing-827.proj_sentinel1_v20210924.detect_foot_ext_ais`
+ join likelihood_in_scene
+ using(ssvid,scene_id)
+  WHERE DATE(_PARTITIONTIME) 
+between 
+"2017-01-01"
+and
+"2021-12-31" 
+and within_footprint
+and source = "AIS")
+where row = 1
+
+),
+
+distance_to_closest as 
+(select a.ssvid, a.delta_minutes, a.year, a.within_footprint_5km,
+a.within_footprint_1km,
+ scene_id ,
+ min(st_distance(a.pos,b.pos)) min_distance_m
+ from extrap a
+ join
+ extrap b
+ using(scene_id)
+ where a.ssvid != b.ssvid
+ group by ssvid, delta_minutes, year, within_footprint_5km, 
+ within_footprint_1km, scene_id),
+
+ vessels_in_scenes as (
+SELECT 
+ssvid,
+min_distance_m,
+delta_minutes,
+best_length_m,
+within_footprint_5km,
+within_footprint_1km,
+ scene_id 
+ FROM distance_to_closest
+join
+vessel_info
+using(ssvid)
+where delta_minutes < 2
+)
+
+
+select 
+sum(if(min_distance_m >= 1000,1,0))/count(*) 
+from 
+vessels_in_scenes '''
+
+pd.read_gbq(q)
+# -
 
 
 

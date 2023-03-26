@@ -439,7 +439,7 @@ df.head()
 
 df[df.include==1].rolling_date.max()
 
-df.to_feather("../../data/24day_rolling_augmented_v20230220.feather")
+df.to_feather("../data/24day_rolling_augmented_v20230220.feather")
 
 # +
 plt.figure(figsize=(10, 4))

@@ -17,10 +17,15 @@
 #
 #
 
-from prj_global_sar_analysis.bigquery_helper_functions import (
+# +
+import sys
+sys.path.append('../analyses_functions') 
+
+from bigquery_helper_functions import (
     update_table_description,
     query_to_table,
 )
+# -
 
 # ### Version 20220509
 

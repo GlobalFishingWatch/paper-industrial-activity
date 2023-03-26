@@ -13,7 +13,9 @@
 #     name: python3
 # ---
 
-# # What are the EEZs?
+# # EEZ Analysis
+#
+# This produces a table with information about each EEZ, and the fraction of total activity that is under 200 m in depth. It also provides the estimates of the number of vessels active in the eastern and western Noth Korean EEZs.
 
 # +
 from datetime import datetime, timedelta
@@ -21,16 +23,18 @@ import numpy as np
 import pandas as pd
 import pyperclip
 # use the standard for eliminating ice locations.
-from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
 
+import sys
+sys.path.append('../analyses_functions') 
+from eliminate_ice_string import *
 eliminated_locations = eliminate_ice_string()
-pyperclip.copy(eliminated_locations)
 # -
 
 # # Update the EEZ info table
 
 # Download marine reagions EEZ layer version 11 from https://www.marineregions.org/
-# !ls ../../data/World_EEZ_v11_20191118/
+# make sure data is in the right place
+# !ls ../data/World_EEZ_v11_20191118/
 
 # +
 ### upload EEZ info table to bigquery. uncomment to redo
@@ -59,11 +63,9 @@ df_eez = df_eez.set_index('MRGID')
 
 df_eez.head()
 
-# +
-# df.to_csv("eezinfo.csv", index=False)
-# -
 
-# ## for each eez, get:
+
+# ## For each eez, get:
 #  - area analyzed
 #  - area with 200m depth
 #  - how much of 200m depth has a deteciton once every 10 days and every 100
@@ -75,6 +77,7 @@ df_eez.head()
 
 # ## Area Analyzed and Area wihtin 200 depth
 
+# make the ice string elmination work with different variables
 e = eliminated_locations.replace("detect_lon","(lon_index/200 + 1/400)")
 e = e.replace("detect_lat","(lat_index/200 + 1/400)")
 
@@ -382,11 +385,10 @@ df_d = pd.read_gbq(q)
 
 df_d.head()
 
+# check the fraction of fishing that is dark
+# this is also calculated in another notebook
 df_d.dark_fishing.sum()/df_d.fishing_detections.sum()
 
-
-# +
-# df_d.dark_fishing2.sum()/df_d.fishing_detections2.sum()
 
 # +
 def get_area(row):
@@ -438,7 +440,7 @@ d = df_d.groupby('eez').sum()
 d_fishnonfish = d[['matched_fishing','matched_nonfishing','dark_fishing','dark_nonfishing']]
 # -
 d_area = df_area.set_index('eez').fillna(0)
-d_area
+d_area.head()
 
 
 
@@ -454,8 +456,6 @@ d = d.fillna(0)
 df = d
 
 df.head()
-
-df.fishing.sum()
 
 
 
@@ -489,47 +489,31 @@ def get_continent(x):
 
 df['continent'] = df.ISO_TER1.apply(get_continent)
 
+df.to_csv("../data/activity_by_eez.csv",index=False)
 
+# # calcluate some statistics on area under 200 meters depth
 
-# # What Fraction of Activity is in China?
+# what fraction of the global area of the ocean under 200 meters is in our study area?
+# note that we eliminated enormous amounts of shallow water in the far north
+df.area_km2_under200_imaged.sum()/df.area_km2_under200.sum()
 
-df.head()
+# what fraction of the imaged area under 200m had fishing activity?
+df.area_fish_under_200.sum()/df.area_km2_under200_imaged.sum()
 
+# what fraction of the area imaged had fishing activity?
+df.area_fish.sum()/df.area_km2_imaged.sum()
 
+# What fraction of the area under 200m had a vessel at least once every 10 days?
+# That is, a density of 0.1 fishing vessels per 10th degree square
+df.area_fish_under_200m_10day.sum()/df.area_km2_under200_imaged.sum()
 
-
-
-df['concentration_200'] = df.fishing_under_200/df.area_km2_under200_imaged
-df.to_csv("../../data/eez_with_info_v2.csv")
-
-
-
-df.head()
-
-df[df.ISO_TER1=="ESP"]
-
-
-
-d = df.groupby("ISO_TER1").sum()
-d['concentration_200'] = d.fishing_under_200/d.area_km2_under200_imaged
-
-# +
-# d.to_csv("fishing_v2.csv")
-# -
-
-# how much of the world's area under 200 meters was imaged
-d.area_km2_under200_imaged.sum()/d.area_km2_under200.sum()
-
-d.area_fish_under_200.sum()/d.area_km2_under200_imaged.sum()
-
-d.area_fish.sum()/d.area_km2_imaged.sum()
-
-d.area_fish_under_200m_10day.sum()/d.area_km2_under200_imaged.sum()
-
+# What is the total number of fishing vessels per km2 in areas under 200m
+# by continent?
 d = df.groupby("continent").sum()
 d['concentration_200'] = d.fishing_under_200/d.area_km2_under200_imaged
 d['concentration_200']
 
+# What is the area under 200m depth by continent that was imaged?
 d.area_km2_under200_imaged
 
 # # How much fishig is in European countries on the Mediterranean as compared to African countries on the Mediterranean?
@@ -559,24 +543,24 @@ df[df.ISO_TER1.isin(med_eu)].matched_fishing.sum() / df[df.ISO_TER1.isin(med_afr
 # -
 
 
-df.columns
-
+# What fraction of the ocean area is under 200m? 
 df.area_km2_under200.sum()/df.area_km2.sum()
 
 # what fraciton of fishing is in asia?
 df[df.continent=='Asia'].fishing.sum()/df.fishing.sum()
 
-df.to_csv("../../data/activity_by_eez.csv",index=False)
 
-# fraction of fishing under 
+
+# What fraction of fishing is under 20 meters in depth?
 df.fishing_under_200.sum()/df.fishing.sum()
 
-# fraction of fishing under 
+# What fraction of nonfishing is under 20 meters in depth?
 df.nonfishing_under_200.sum()/df.nonfishing.sum()
 
 # # Analysis for North Korea by Year
 #
-# rebuild the same dataframes as above, but divide the North Korean EEZ into east and west
+# Rebuild the same dataframes as above, but divide the North Korean EEZ into east and west.
+# Note that these are the same queries with very small modificaitons to divide North Korea into east and west.
 
 # +
 q = f'''with depth_table as 
@@ -668,8 +652,6 @@ where eez = '8328'
 
 df_area_nk = pd.read_gbq(q)
 # -
-
-
 
 
 
