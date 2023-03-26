@@ -40,23 +40,23 @@ import pyseas.contrib as psc
 import pyseas.maps as psm
 # import squarify
 import matplotlib.pyplot as plt
-import undisclosed_industrial.infra_modules as im
+import infra_modules as im
 
-import pycountry
-from pycountry_convert import (
-    country_alpha2_to_continent_code,
-    country_name_to_country_alpha2,
-)
+# import pycountry
+# from pycountry_convert import (
+#     country_alpha2_to_continent_code,
+#     country_name_to_country_alpha2,
+# )
 
-# %load_ext autoreload
-# %autoreload 2
+# # %load_ext autoreload
+# # %autoreload 2
 
-# %reload_ext google.cloud.bigquery
+# # %reload_ext google.cloud.bigquery
 
-# %matplotlib inline
+# # %matplotlib inline
 
-import warnings
-warnings.filterwarnings('ignore')
+# import warnings
+# warnings.filterwarnings('ignore')
 
 # %% [markdown]
 # ### Count and map infrastructure inside and outside of oil fields
