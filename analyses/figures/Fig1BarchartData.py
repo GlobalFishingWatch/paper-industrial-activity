@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.11.2
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -44,7 +44,7 @@ import seaborn as sns
 
 # %%
 # use the standard for eliminating ice locations.
-from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
+from analyses_module.eliminate_ice_string import eliminate_ice_string
 
 eliminated_locations = eliminate_ice_string()
 pyperclip.copy(eliminated_locations)

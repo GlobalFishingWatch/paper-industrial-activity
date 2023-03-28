@@ -40,6 +40,7 @@ coverage.json
 core.*
 vgcore.*
 requirements-local.txt
+*.png
 
 # Mac
 *.DS_Store
