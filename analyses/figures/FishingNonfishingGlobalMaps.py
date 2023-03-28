@@ -39,7 +39,6 @@ from datetime import datetime, timedelta
 from cmaps import *
 
 # %matplotlib inline
-plt.rcParams["savefig.dpi"] = 600
 
 # %%
 # use the standard for eliminating ice locations.
@@ -49,54 +48,6 @@ eliminated_locations = eliminate_ice_string()
 
 
 # %%
-palette1 = [
-    "#d7191c",
-    "#fdae61",
-    "#ffffbf",
-    "#abd9e9",
-    "#2c7bb6",
-]
-
-red, blue = "#ca0020", "#0571b0"  # original
-# red, blue = '#E43026', '#2180B7'  # guppy
-
-# Red-Blue
-palette2 = [
-    "#ca0020",
-    # "#f4a582",
-    # "#f7f7f7",  # white
-    # "#92c5de",
-    "#0571b0",
-]
-
-palette3 = [
-    "#ca0020",
-    "#f4a582",
-    "#ffffbf",  # yellow
-    "#92c5de",
-    "#0571b0",
-]
-
-palette4 = [
-    "#0571b0",
-    "#92c5de",
-    "#f4a582",
-    "#ca0020",
-]
-
-palette5 = [
-    "#2b83ba",
-    # "#6C3B58",  # dark purple
-    "#7b3294",  # light purple
-    "#d7191c",
-]
-
-palette6 = [
-    "#ca0020",  # red
-    "#ffffbf",  # yellow
-    "#0571b0",  # blue
-]
-
 # guppy
 palette7 = [
     "#F77539",
@@ -106,17 +57,7 @@ palette7 = [
     "#24BDB2",
 ]
 
-mycmap1 = get_continuous_cmap(palette1)
-mycmap2 = get_continuous_cmap(palette2)
-mycmap3 = get_continuous_cmap(palette3)
-mycmap4 = get_continuous_cmap(palette4)
-mycmap5 = get_continuous_cmap(palette5)
-mycmap6 = get_continuous_cmap(palette6)
 mycmap7 = get_continuous_cmap(palette7)
-
-# Discrete cmap 
-rgb_list = [rgb_to_dec(hex_to_rgb(i)) for i in palette7]
-mycmap_discrete = piecewise_constant_cmap(rgb_list)
 
 
 # %% [markdown]
@@ -164,10 +105,10 @@ def map_bivariate(
             ylabel="",
             xformat="{x:.0%}",
             #  yformat="{x:.2f}",
-            aspect_ratio=50,  # lower = thicker
+            aspect_ratio=55,  # lower = thicker
             width=0.40,
             loc=(0.4, 0.04),
-            fontsize=16,
+            fontsize=18,
             ax=ax,
         )
         cax.minorticks_off()
@@ -300,7 +241,7 @@ nonfishing_ratio = dark_nonfishing / nonfishing_total
 
 
 # %%
-def add_labels(ind, x, labels, ax):
+def add_labels(ind, x, labels, ax, color='0.5'):
     for i, label in zip(ind, labels):
         ax.text(
             x,
@@ -310,11 +251,11 @@ def add_labels(ind, x, labels, ax):
             va="center",
             rotation=0,
             fontsize=16,
-            color="0.5",
+            color=color,
         )
 
 
-def add_numbers(ind, size, labels, ax, pad=120):
+def add_numbers(ind, size, labels, ax, pad=120, color="0.5"):
     for i, s, label in zip(ind, size, labels):
         ax.text(
             s + pad,
@@ -324,7 +265,7 @@ def add_numbers(ind, size, labels, ax, pad=120):
             va="center",
             rotation=0,
             fontsize=16,
-            color="0.5",
+            color=color,
         )
 
 
@@ -340,7 +281,7 @@ def add_description(text, ax):
         color="0.0",
     )
 
-
+    
 def add_chart(
     left,
     bottom,
@@ -368,6 +309,7 @@ def add_chart(
     tot = tot[i_sort]
     a = a[i_sort]
     b = b[i_sort]
+    perc = 100 * a/tot
 
     iax.barh(
         y=ind, height=0.22, width=a, align="center", color=colors[1], alpha=0.8
@@ -382,11 +324,11 @@ def add_chart(
         alpha=0.8,
     )
 
-    labels1 = [f"{s:.1f}k" for s in tot / 1000]
-    # labels2 = labels
-    labels2 = [f"{s1} {s2}" for s1, s2 in zip(labels, labels1)]
+    labels1 = [f"{s:.1f}k" for s in tot / 1000]  # totals
+    labels2 = [f"{p:.0f}%" for p in perc]        # percents
     add_labels(ind, y_label, labels, iax)
     add_numbers(ind, tot, labels1, iax, p_label)
+    # add_numbers(ind, tot, labels2, iax, p_label + 3000, color=colors[1])
     add_description(title, iax)
 
     iax.axis("off")
@@ -415,7 +357,7 @@ def add_legend(ax):
         ha="right",
         va="center",
         rotation=0,
-        fontsize=16,
+        fontsize=17,
         color='0.5',
     )
     ax.text(
@@ -425,7 +367,7 @@ def add_legend(ax):
         ha="right",
         va="center",
         rotation=0,
-        fontsize=16,
+        fontsize=17,
         color=orange,
     )
     ax.text(
@@ -435,7 +377,7 @@ def add_legend(ax):
         ha="right",
         va="center",
         rotation=0,
-        fontsize=16,
+        fontsize=17,
         color=blue,
     )
 
@@ -443,7 +385,6 @@ def add_legend(ax):
 # %%
 SAVE = True
 
-# LambertAzimuthalEqualArea
 plt.rcParams["figure.autolayout"] = True
 
 fig = plt.figure(figsize=(15, 6 * 3), constrained_layout=False)
@@ -473,7 +414,6 @@ with psm.context(psm.styles.light):
         a_vmax=0.01,
         eez_linewidth=0.4,
         eez_color="#5c5c5c",
-        # cmap=mycmap2.reversed(),
         cmap=mycmap7.reversed(),
         ax=ax1,
         psm=psm,
@@ -497,7 +437,6 @@ with psm.context(psm.styles.light):
         a_vmax=0.01,
         eez_linewidth=0.4,
         eez_color="#5c5c5c",
-        # cmap=mycmap2.reversed(),
         cmap=mycmap7.reversed(),
         ax=ax2,
         psm=psm,
@@ -507,12 +446,6 @@ with psm.context(psm.styles.light):
     add_title("Transport and Energy", ax2)
 
     # ===== Bar charts ===== #
-    
-    # Data for barch charts
-    # a = np.array([1690, 20608, 460, 1238, 1969, 874])   # dark fish
-    # b = np.array([361, 3228, 116, 1615, 418, 330])      # ais fish
-    # c = np.array([256, 5670, 41, 385, 237, 96])         # dark nonf
-    # d = np.array([2095, 13722, 643, 4374, 2055, 1093])  # ais nonf
     
     df_bars['continents'] = [
         'Asia',
@@ -545,6 +478,6 @@ with psm.context(psm.styles.light):
     add_legend(ax3)
 
 if SAVE:
-    plt.savefig("figures/fig1v2b_5th.png", bbox_inches="tight", pad_inches=0, dpi=300)
+    plt.savefig("figures/fig1v3_5th.png", bbox_inches="tight", pad_inches=0, dpi=300)
 
 # %%

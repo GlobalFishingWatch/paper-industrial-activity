@@ -20,7 +20,7 @@ See paper for further description of the methods and outputs:
     ├── detect_vessels.py       # run a multi-scene vessel detector
     ├── detect_scene.py         # run a single-scene detector
     ├── detect_infra.py         # run a fixed-infrastructure detector
-    ├── detect_shore.py         # run an inshore detector
+    ├── detect_shore.py         # run a close-to-shore detector
     ├── export_foots.py         # run a footprint generator
     ├── upload_detect.py        # download/process/upload detections
     ├── upload_foots.py         # download/process/upload footprints
@@ -34,20 +34,14 @@ See paper for further description of the methods and outputs:
     │   ├── params.py           # the `Params` class
     │   ├── ranges.py           # date, tile, and window range iterators
     │   └── utils.py            # generic helper functions
-    ├── scripts
-    │   ├── eval_detect.py      # assess matched detections
-    │   ├── interp_ais.py       # get AIS positions close to a scene
-    │   ├── locate_sat.py       # calculate Sentinel-1 positions
-    │   ├── match_detect.py     # match detections to AIS
-    │   ├── match_detect.yaml
-    │   ├── rasterize_foot.py   # create overpass raster for N days
-    │   └── set_params.py       # replace/add params to PARAMS files
-    └── tests
-        ├── NOTES.txt
-        ├── figures
-        ├── plot_test_detect.py
-        ├── plot_test_predict.py
-        └── test_detect_vessel.py
+    └── scripts
+        ├── eval_detect.py      # assess matched detections
+        ├── interp_ais.py       # get AIS positions close to a scene
+        ├── locate_sat.py       # calculate Sentinel-1 positions
+        ├── match_detect.py     # match detections to AIS
+        ├── match_detect.yaml   # set params for matching run
+        ├── rasterize_foot.py   # create overpass raster for N days
+        └── set_params.py       # replace/add params to PARAMS files
 
 **Main classes**
 
