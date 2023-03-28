@@ -1,4 +1,4 @@
-## Code for the paper analyses and figures
+## Code for the analyses and figures
 
     .
     ├── features        # environmental rasters for model features
