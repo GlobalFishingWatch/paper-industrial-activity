@@ -42,8 +42,8 @@ from matplotlib.gridspec import GridSpec
 # %matplotlib inline
 
 # %%
-# Local import
-from color import *
+# Local imports
+from cmaps import *
 
 import pycountry
 from pycountry_convert import (
@@ -84,7 +84,7 @@ def get_country(x):
 
 # %%
 # Load table / read data on vessel traffic
-QUERY = True
+QUERY = False
 
 tab_oil = 'infra_vessel_activity_oil_100th_degree_v20230222'
 tab_wind = 'infra_vessel_activity_wind_100th_degree_v20230222'
@@ -176,7 +176,7 @@ raster_wind = psm.rasters.df2raster(
 
 # %%
 # Load infrastructure data
-QUERY = True
+QUERY = False
 
 tab_infra = "offshore_infra_reclassified_w_regions_v20230222"
 
@@ -496,15 +496,24 @@ with psm.context(psm.styles.light):
             transform=psm.identity,
             zorder=10,
         )
+        # ax1.scatter(
+        #     x=x_mara,
+        #     y=y_mara,
+        #     s=z_mara * scale,
+        #     facecolors='none',
+        #     edgecolors="#2954E1",
+        #     linewidth=1,
+        #     transform=psm.identity,
+        #     zorder=2,
+        # )
         ax1.scatter(
             x=x_mara,
             y=y_mara,
             s=z_mara * scale,
-            facecolors='none',
-            edgecolors="#2954E1",
-            linewidth=0.75,
+            c="#2954E1",
+            alpha=alpha - 0.05,
             transform=psm.identity,
-            zorder=20,
+            zorder=2,
         )
 
         # Here we create a legend:
@@ -586,7 +595,7 @@ with psm.context(psm.styles.light):
                     "Hours of vessel activity per km$^2$",
                     ha="right",
                     color="0.2",
-                    fontsize=16,
+                    fontsize=17,
                     transform=ax.transAxes,
                 )
             elif count == 1:
@@ -614,7 +623,7 @@ with psm.context(psm.styles.light):
                 va="top",
                 color='0.2',
                 weight="normal",
-                fontsize=19,
+                fontsize=20,
                 transform=ax.transAxes,
             )
             count += 1
@@ -678,7 +687,7 @@ with psm.context(psm.styles.light):
             "Oil infrastructure",
             ha="left",
             color=color_oil,
-            fontsize=16,
+            fontsize=17,
             transform=ax4.transAxes,
         )
         ax4.text(
@@ -687,7 +696,7 @@ with psm.context(psm.styles.light):
             "Wind turbines",
             ha="left",
             color=color_wind,
-            fontsize=16,
+            fontsize=17,
             transform=ax4.transAxes,
         )
 
@@ -726,13 +735,13 @@ with psm.context(psm.styles.light):
             "Wind turbines",
             ha="left",
             color=color_wind,
-            fontsize=16,
+            fontsize=17,
             transform=ax5.transAxes,
         )
 
 if SAVE:
     plt.savefig(
-        "figures/infra_global_map.png", bbox_inches="tight", pad_inches=0.05, dpi=300
+        "figures/infra_global_map_v2.png", bbox_inches="tight", pad_inches=0.05, dpi=300
     )
 
 # %%
