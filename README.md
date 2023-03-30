@@ -1,6 +1,6 @@
 ## Public repository for all the code developed in the paper
 
-[Satellite mapping reveals extensive undisclosed industrial activity at sea](http://#)
+Satellite mapping reveals extensive undisclosed industrial activity at sea
 
 by [Global Fishing Watch](http://#) _et al_.
 
