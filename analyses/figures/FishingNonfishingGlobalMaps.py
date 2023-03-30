@@ -106,8 +106,8 @@ def map_bivariate(
             xformat="{x:.0%}",
             #  yformat="{x:.2f}",
             aspect_ratio=55,  # lower = thicker
-            width=0.40,
-            loc=(0.4, 0.04),
+            width=0.42,
+            loc=(0.36, 0.04),
             fontsize=18,
             ax=ax,
         )
@@ -478,6 +478,6 @@ with psm.context(psm.styles.light):
     add_legend(ax3)
 
 if SAVE:
-    plt.savefig("figures/fig1v3_5th.png", bbox_inches="tight", pad_inches=0, dpi=300)
+    plt.savefig("figures/fig1v4_5th.png", bbox_inches="tight", pad_inches=0, dpi=300)
 
 # %%
