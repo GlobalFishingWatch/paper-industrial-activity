@@ -25,7 +25,7 @@ client: bigquery.Client = bigquery.Client(project="world-fishing-827")
 # Get the query templates
 import sys
 
-sys.path.append("../analyses_functions")
+sys.path.append("../utils")
 from vessel_queries import *
 
 # ice string elimination

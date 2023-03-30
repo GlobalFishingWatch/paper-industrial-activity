@@ -24,7 +24,7 @@ import pandas as pd
 
 
 import sys
-sys.path.append('../analyses_functions') 
+sys.path.append('../utils') 
 from vessel_queries import *
 
 

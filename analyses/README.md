@@ -8,7 +8,8 @@
     ├── rasterize       # rasterization of SAR footprints
     ├── roads           # filtering of ambiguities from vehicles
     ├── spatial         # spatial analyses and creation of data for figures
-    └── timeseries      # moving window and interpolation of time series
+    ├── timeseries      # moving window and interpolation of time series
+    └── utils.          # a folder for functions to help with analyses
 
 
 ## Building conda environment
