@@ -17,15 +17,20 @@
 #
 # Our algorithm to detect infrastructure identifies objects in a six month window of time and then assigns a class to those objects (noise, wind, oil, or other). The queries in this notebook average those classifications across time. That is, if a detection appears in two different time windows, this averages the values to get the best value across time. The result is more stable and accurate predictions.
 
+# +
 from datetime import datetime, timedelta, date
 from google.cloud import bigquery
 import pandas as pd
 # Construct a BigQuery client object.
 client = bigquery.Client()
-from prj_global_sar_analysis.bigquery_helper_functions import (
+import sys
+sys.path.append('../analyses_functions') 
+
+from bigquery_helper_functions import (
     update_table_description,
     query_to_table,
 )
+# -
 
 q = '''
 with labeled as

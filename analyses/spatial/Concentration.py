@@ -13,6 +13,10 @@
 #     name: python3
 # ---
 
+# # Concentration
+#
+#
+
 import numpy as np
 import pandas as pd
 import proplot as pplt
@@ -23,140 +27,25 @@ import matplotlib.pyplot as plt
 # +
 scale = 10
 
-from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
+import sys
+sys.path.append('../analyses_functions') 
+from vessel_queries import *
+from eliminate_ice_string import *
 eliminated_locations = eliminate_ice_string()
 
-# +
-vessel_info_table = "gfw_research.vi_ssvid_v20221001"
-
-predictions_table = """
-
-  select 
-    detect_id, 
-    avg(fishing_33) fishing_score_low,
-    avg( fishing_50) fishing_score, 
-    avg(fishing_66) fishing_score_high
-  from
-    (select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `world-fishing-827.proj_sentinel1_v20210924.fishing_pred_even_v5*`
-    union all
-    select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `world-fishing-827.proj_sentinel1_v20210924.fishing_pred_odd_v5*`
-    )
-  group by 
-    detect_id
-"""
-
 
 # +
-q = f'''with
-predictions_table as
-(
+q = f'''
 
-{predictions_table}
+{final_query_static} -- from the file vessel_queries
 
-
-),
-
-vessel_info as (
-select
-  ssvid,
-  if(on_fishing_list_known is not null, on_fishing_list_known, on_fishing_list_nn) as on_fishing_list
-from
-   {vessel_info_table}
-
-),
-
-detections_table as
-
-(
-  select
-  detect_lat,
-  detect_lon,
-  detect_id,
-  ssvid_mult_recall_length as ssvid,
-  score_mult_recall_length as score,
-  overpasses_2017_2021,
-  7.4e-6 as dd_perkm2,
-  eez_iso3
-  from
-  `world-fishing-827.proj_global_sar.detections_w_overpasses_v20230215`
-  where
-  -- the following is very restrictive on repeated objects
-  repeats_100m_180days_forward < 3 and
-  repeats_100m_180days_back < 3 and
-  repeats_100m_180days_center < 3
-  -- get rid of scenes where more than half the detections
-  -- are likely noise
-  and (scene_detections <=5 or scene_quality > .5)
-  and extract(date from detect_timestamp)
-     between "2017-01-01" and "2021-12-31"
-  -- at least 30 overpasses
-  and overpasses_2017_2021 > 30
-  -- our cutoff for noise -- this could be adjusted down, but makes
-  -- very little difference between .5 and .7
-  and presence > .7
-  and not in_road_doppler
-  {eliminated_locations}
-),
-
-
-
-final_table as (
-select
-  detect_lat,
-  detect_lon,
-  eez_iso3,
-  overpasses_2017_2021,
-  fishing_score,
-  fishing_score_low,
-  fishing_score_high,
-  case when score > dd_perkm2 and on_fishing_list  then "matched_fishing"
-   when score > dd_perkm2 and not on_fishing_list then "matched_nonfishing"
-   when score > dd_perkm2 and on_fishing_list is null  then "matched_unknown"
-   when score < dd_perkm2 then "unmatched" end as matched_category
-from
-  detections_table a
-left join
-  vessel_info
-using(ssvid)
-left join
-  predictions_table
-using(detect_id)
-),
+,
 
 gridded as (
 select
   floor(detect_lat*{scale}) lat_index,
   floor(detect_lon*{scale}) lon_index,
-  sum(if( matched_category = 'matched_fishing', 1/overpasses_2017_2021, 0)) matched_fishing,
-  sum(if( matched_category = 'matched_nonfishing', 1/overpasses_2017_2021, 0)) matched_nonfishing,
-  sum(if( matched_category = 'matched_unknown', 1/overpasses_2017_2021, 0)) matched_unknown,
-  sum(if( matched_category = 'matched_unknown',
-               fishing_score/overpasses_2017_2021, 0)) matched_unknown_likelyfish,
-  sum(if( matched_category = 'matched_unknown',
-               (1-fishing_score)/overpasses_2017_2021, 0)) matched_unknown_likelynonfish,
-  sum(if( matched_category = 'unmatched', fishing_score/overpasses_2017_2021, 0)) unmatched_fishing,
-  sum(if( matched_category = 'unmatched', (1-fishing_score)/overpasses_2017_2021, 0)) unmatched_nonfishing,
-  
-  sum(if( matched_category = 'matched_unknown',
-               fishing_score_low/overpasses_2017_2021, 0)) matched_unknown_likelyfish_low,
-  sum(if( matched_category = 'matched_unknown',
-               (1-fishing_score_low)/overpasses_2017_2021, 0)) matched_unknown_likelynonfish_low,
-  sum(if( matched_category = 'unmatched', 
-               fishing_score_low/overpasses_2017_2021, 0)) unmatched_fishing_low,
-  sum(if( matched_category = 'unmatched', 
-                (1-fishing_score_low)/overpasses_2017_2021, 0)) unmatched_nonfishing_low,
-
-  sum(if( matched_category = 'matched_unknown',
-               fishing_score_high/overpasses_2017_2021, 0)) matched_unknown_likelyfish_high,
-  sum(if( matched_category = 'matched_unknown',
-               (1-fishing_score_high)/overpasses_2017_2021, 0)) matched_unknown_likelynonfish_high,
-  sum(if( matched_category = 'unmatched', fishing_score_high/overpasses_2017_2021, 0)) unmatched_fishing_high,
-  sum(if( matched_category = 'unmatched', (1-fishing_score_high)/overpasses_2017_2021, 0)) unmatched_nonfishing_high,
-  
-  
-  sum(1/overpasses_2017_2021) detections
+  {fields_static} -- from the file vessel_queries
 from
   final_table
 group by
@@ -176,8 +65,10 @@ group by
 '''
 
 df = pd.read_gbq(q)
+# +
+# import pyperclip
+# pyperclip.copy(q)
 # -
-
 
 
 # ## What is the total study area?
@@ -306,4 +197,7 @@ plt.plot(d.area_km.cumsum()/1e6, d.nonfishing.cumsum()/d.nonfishing.sum(), label
 plt.legend(frameon=False)
 plt.ylabel("fraction of activity")
 plt.xlabel("area, million km2")
+
+# -
+
 
