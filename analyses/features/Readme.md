@@ -1,10 +1,10 @@
 # Model Features
 
-This folder contains analyses that produce features for the neural net model. We also built a random forest model that draws on many of these same features. 
+This folder contains analyses that produce features for the neural net model. 
 
 ### GenerateFeatures.py
 
-This notebook produces features for the random forest and the neural net classifier that determines if a vessel is a fishing vessel. Note that for the paper we did not use the random forest classifier.
+This notebook produces features the neural net classifier that determines if a vessel is a fishing vessel. 
 
 
 ### UploadNPP.py
