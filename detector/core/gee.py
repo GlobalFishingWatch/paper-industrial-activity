@@ -1,5 +1,4 @@
-"""
-GEE functions.
+"""GEE functions.
 
 """
 import math

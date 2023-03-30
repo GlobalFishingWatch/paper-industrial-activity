@@ -1,4 +1,4 @@
-"""Calls `DetectorVessel` to create and export footprints only.
+"""Calls `DetectorVessel` to generate and export footprints only.
 
 """
 from .detector import DetectorVessel

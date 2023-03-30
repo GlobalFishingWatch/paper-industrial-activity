@@ -1,4 +1,4 @@
-"""Class to handles input parameters, files and table names.
+"""Class to handle input parameters, files and table names.
 
 """
 import re

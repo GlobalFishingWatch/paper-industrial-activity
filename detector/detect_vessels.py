@@ -1,7 +1,7 @@
 from core.detector import DetectorVessel
 from core.ranges import date_range
 
-folder = "junk"
+folder = "params"
 
 for date in date_range('2020-01-01', '2020-12-30'):
     DetectorVessel(

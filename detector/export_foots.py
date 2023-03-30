@@ -1,5 +1,4 @@
-"""
-Script to generate and export footprints, passing command-line args.
+"""Script to generate and export footprints, passing command-line args.
 
 Notes
 -----

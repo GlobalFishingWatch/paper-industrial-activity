@@ -1,5 +1,4 @@
-"""
-Two ways to process an AOI:
+"""Two ways to process an AOI
 
 1. Internal loop
 
@@ -19,7 +18,7 @@ from core.detector import DetectorInfraShore
 from core.ranges import tile_range
 from core.utils import get_min_max
 
-folder = "stanford_la"
+folder = "output"
 
 # AOI: Gulf of Mexico
 # x1, x2, y1, y2 = get_min_max(
@@ -31,17 +30,7 @@ folder = "stanford_la"
 #     ]
 # )
 
-# AOI: Los Angeles for Stanford
-# x1, x2, y1, y2 = get_min_max(
-#     [
-#         [-120.44689428573732, 35.363504902130295],
-#         [-120.44689428573732, 32.899406341653076],
-#         [-117.09606420761232, 32.899406341653076],
-#         [-117.09606420761232, 35.363504902130295],
-#     ]
-# )
-
-# AOI: North Sea for Stanford
+# AOI: North Sea
 # x1, x2, y1, y2 = get_min_max(
 #     [
 #         [0.47211700659262945, 54.63202231864467],
@@ -61,12 +50,11 @@ suffix = "_northsea"
 
 # GCS: gs://{bucket}/{version}/{subbucket}/{YYYYMMDD}
 bucket = "scratch_fernando"
-version = "stanford_v1"
+version = "v1"
 subbucket = "detections"
 
 # Mask to clip the region (AOI)
-# shore_buffer = "users/fernando/gulf_of_mexico_buffer_polygon_500m"
-shore_buffer = "users/fernando/stanford_areas_of_interest_selected_3km_buffer"
+shore_buffer = "users/fernando/gulf_of_mexico_buffer_polygon_500m"
 
 # Define time window for composite
 date1, date2 = ("2021-01-01", "2021-07-01")
@@ -121,4 +109,3 @@ DetectorInfraShore(
     tile_dx=1,
     tile_dy=1,
 ).process(folder=folder, skip_done=False)
-# ).save(folder=folder, skip_done=False)

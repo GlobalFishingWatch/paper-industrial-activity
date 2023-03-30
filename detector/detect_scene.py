@@ -10,7 +10,7 @@ from core.ranges import date_range
 # Folder to save PARAMS files
 folder = "parameters"
 
-# (A) Retrieve all scenes on GEE for a day
+# (A) Retrieve all scenes from GEE for a day
 scene_list = check_available_scenes('YYYYMMDD')
 
 # (B) Check if there are any unprocessed scenes

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Download footprints from GCS, convert to WKT and upload to BQ.
+"""Download footprints from GCS, convert to WKT and upload to BQ.
 
 Usage (two options):
 

@@ -61,7 +61,7 @@ def load_img_from_gcs(bucket, name):
     """
     Read image from URL -> numpy.
 
-    bucket: 'scratch_fernando'
+    bucket: 'scratch_name'
     name: 'detection_tiles_fortnight/20170103/S1A_IW_GRDH_1SDV_20170103T000520_20170103T000549_014660_017D89_EF86;-87.4947680;12.6963240.0
 
     """
