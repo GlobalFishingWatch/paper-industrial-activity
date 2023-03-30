@@ -16,7 +16,7 @@
 
 # # Get polgyons that have at least 30 overpasses from 2017 to 2021
 #
-# This produces a raster of all locations, at 100th of a degree, that have at least 30 overpasses across our study period and turns them into a series of polygons, and then saves those polygons in a file
+# This produces a raster of all locations, at 100th of a degree, that have at least 30 overpasses across our study period and turns them into a series of polygons, and then saves those polygons in a file. 
 #
 #
 
@@ -37,7 +37,9 @@ from shapely.geometry import shape
 #
 
 # use the standard for eliminating ice locations.
-from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
+import sys
+sys.path.append('../analyses_functions') 
+from eliminate_ice_string import *
 eliminated_locations = eliminate_ice_string()
 
 
@@ -106,6 +108,6 @@ df_shapes = gpd.GeoDataFrame({'study_area':shapes})
 df_shapes['study_area_02'] = df_shapes.study_area.apply(lambda x: x.simplify(.02))
 df_shapes['study_area_05'] = df_shapes.study_area.apply(lambda x: x.simplify(.05))
 
-df_shapes.to_feather("../../data/study_area.csv")
+df_shapes.to_csv("../data/study_area.csv",index=False)
 
 

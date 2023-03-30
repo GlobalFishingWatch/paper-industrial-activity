@@ -14,6 +14,8 @@
 # ---
 
 # # AIS Fishing Activity by Continent
+#
+# This produces the table in the supplement that identifies the amount of AIS fishing by continent from GFW fishing effort data
 
 import pandas as pd
 

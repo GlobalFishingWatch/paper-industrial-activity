@@ -29,14 +29,12 @@ import matplotlib as mpl
 import cartopy
 import cartopy.crs as ccrs
 import cmocean
-
-# +
-
-from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
-
-eliminated_locations = eliminate_ice_string()
-
 # -
+
+import sys
+sys.path.append('../analyses_functions') 
+from eliminate_ice_string import *
+eliminated_locations = eliminate_ice_string()
 
 eliminated_locations = eliminated_locations.replace("detect_lat","lat_index/10")
 eliminated_locations = eliminated_locations.replace("detect_lon","lon_index/10")
@@ -73,8 +71,6 @@ overpass_raster = psm.rasters.df2raster(
         origin="lower",
     )
 
-# mkdir images
-
 # +
 
 norm = mpcolors.LogNorm(vmin=1, vmax=1000)
@@ -93,7 +89,7 @@ with psm.context(psm.styles.light):
         fraction=0.02,
         aspect=40,
         pad=0.04,
-    label = "overpasses")
+    label = "Overpasses")
     psm.add_eezs()
 
 
@@ -103,5 +99,8 @@ with psm.context(psm.styles.light):
 #         cmap='presence',
 #         origin="lower",
 #     )
-plt.title("Sentinel-1 Overpasses, 2017-2021",fontsize=15)
-plt.savefig(f"images/overpasses_2017_2021_light_deep.png",dpi=300, bbox_inches="tight")
+# plt.title("Sentinel-1 Overpasses, 2017-2021",fontsize=15)
+plt.savefig(f"figures/overpasses_2017_2021_light_deep.png",dpi=300, bbox_inches="tight")
+# -
+
+
