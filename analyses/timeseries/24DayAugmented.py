@@ -22,10 +22,14 @@ import numpy as np
 
 # +
 # use the standard for eliminating ice locations.
-from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
+import sys
+sys.path.append("../utils")
+from vessel_queries import *
+
+# ice string elimination
+from eliminate_ice_string import eliminate_ice_string
 
 eliminated_locations = eliminate_ice_string()
-pyperclip.copy(eliminated_locations)
 # -
 
 # # Unsmoothed Time Series

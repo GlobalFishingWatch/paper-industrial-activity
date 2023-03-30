@@ -30,7 +30,7 @@ plt.rcParams['axes.facecolor'] = 'white'
 
 # Get the query templates
 import sys
-sys.path.append('../analyses_functions') 
+sys.path.append('../utils') 
 from vessel_queries import *
 
 seen_table = "proj_global_sar.detections_24_w_zeroes_v20230219"

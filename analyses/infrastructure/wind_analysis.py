@@ -7,9 +7,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.2
+#       jupytext_version: 1.14.0
 #   kernelspec:
-#     display_name: rad
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -42,13 +42,14 @@ import pyseas.cm
 import pyseas.contrib as psc
 import pyseas.maps as psm
 
-import infra_modules as im
-
 # %load_ext autoreload
 # %autoreload 2
 
 # %%
-elimination_string = im.messy_areas()
+import sys
+sys.path.append('../analyses_functions') 
+from infra_modules import *
+elimination_string = messy_areas()
 
 # %% [markdown]
 # ### Global timeseries of wind detections
@@ -765,3 +766,5 @@ wind_reg = pd.read_gbq(q)
 
 # %%
 wind_reg
+
+# %%
