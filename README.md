@@ -10,7 +10,7 @@ by [Global Fishing Watch](http://#) _et al_.
     ├── analyses    # code and notebooks of analyses and figures
     ├── detector    # code of SAR detection system in Earth Engine
     ├── nnets       # code of Deep Learning models and training
-    └── untracked   # location to place secret resources like passwords
+    └── untracked   # location to place credential files 
 
 ## License
 
