@@ -9,8 +9,7 @@ by [Global Fishing Watch](http://#) _et al_.
     ├── LICENSE     # usage and distribution conditions
     ├── analyses    # code and notebooks of analyses and figures
     ├── detector    # code of SAR detection system in Earth Engine
-    ├── nnets       # code of Deep Learning models and training
-    └── untracked   # location to place credential files 
+    └── nnets       # code of Deep Learning models and training
 
 ## License
 

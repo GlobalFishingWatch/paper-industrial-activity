@@ -30,14 +30,15 @@ Library for detecting vessels and offshore infrastructure in SAR imagery with a 
     │   ├── params.py           # the `Params` class
     │   ├── ranges.py           # date, tile, and window range iterators
     │   └── utils.py            # generic helper functions
-    └── scripts
-        ├── eval_detect.py      # assess matched detections
-        ├── interp_ais.py       # get AIS positions close to a scene
-        ├── locate_sat.py       # calculate Sentinel-1 positions
-        ├── match_detect.py     # match detections to AIS
-        ├── match_detect.yaml   # set params for matching run
-        ├── rasterize_foot.py   # create overpass raster for N days
-        └── set_params.py       # replace/add params to PARAMS files
+    ├── scripts
+    │   ├── eval_detect.py      # assess matched detections
+    │   ├── interp_ais.py       # get AIS positions close to a scene
+    │   ├── locate_sat.py       # calculate Sentinel-1 positions
+    │   ├── match_detect.py     # match detections to AIS
+    │   ├── match_detect.yaml   # set params for matching run
+    │   ├── rasterize_foot.py   # create overpass raster for N days
+    │   └── set_params.py       # replace/add params to PARAMS files 
+    └── untracked               # location to place credential files
 
 **Main classes**
 

@@ -28,6 +28,8 @@ from spacetrack import SpaceTrackClient
 
 import git
 
+CREDENTIALS = "../untracked/spacetrack.json"
+
 
 def get_repo_basedir() -> Path:
     repo = git.Repo('.', search_parent_directories=True)
@@ -41,7 +43,7 @@ class Credentials(DataClassJsonMixin):
     url: Optional[str] = None
 
 
-with (get_repo_basedir() / "untracked" / "spacetrack.json").open() as fd:
+with (CREDENTIALS).open() as fd:
     creds = Credentials.from_json(fd.read())
 
 st = SpaceTrackClient(
