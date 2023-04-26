@@ -35,9 +35,10 @@ Library for detecting vessels and offshore infrastructure in SAR imagery with a 
     │   ├── interp_ais.py       # get AIS positions close to a scene
     │   ├── locate_sat.py       # calculate Sentinel-1 positions
     │   ├── match_detect.py     # match detections to AIS
-    │   ├── match_detect.yaml   # set params for matching run
+    │   ├── match_detect.yaml   # set params for the matching run
     │   ├── rasterize_foot.py   # create overpass raster for N days
     │   └── set_params.py       # replace/add params to PARAMS files 
+    ├── assets                  # supporting SQL code for the matching
     └── untracked               # location to place credential files
 
 **Main classes**
@@ -57,9 +58,7 @@ Define dates and params in the YAML file (or pass as argument in script, see bel
 
     config.yaml
 
-Run CFAR detector on all dates/scenes with Earth Engine (this exports to GCS as geojson):  
-
-    # User-made script calling detector classes and functions  
+Run CFAR detector on all dates/scenes with Earth Engine (this exports to GCS as geojson), by calling the detector classes and functions in a user-defined script (see below for example), say  
 
     run_detector.py
 
@@ -67,36 +66,36 @@ Download detections to local machine, convert from geojson to CSV, and upload to
 
     # Option 1: S1A and S1B are processed toguether (same instance -> same outdir)
 
-    upload.py --replace path/to/PARAMS_*
+    upload_detect.py --replace path/to/PARAMS_*
 
     # Option 2: S1A and S1B are processed separately (different VMs -> diff outdirs)
 
-    upload.py -s common_subbucket_name --append path/to/PARAMS_S1A*  
-    upload.py -s common_subbucket_name --append path/to/PARAMS_S1B*
+    upload_detect.py -s common_subbucket_name --append path/to/PARAMS_S1A*  
+    upload_detect.py -s common_subbucket_name --append path/to/PARAMS_S1B*
 
     # Option 3: By region_id (if defined) to same subbucket (fixed infrastructure) 
 
-    upload.py -a path/to/PARAMS_*
+    upload_detect.py -a path/to/PARAMS_*
 
 Match AIS and VMS to SAR detections [you'll need the footprints on BQ, see below]:  
 
     # Option 1: Match all generated PARAMS files (single outdir)
 
-    match.py path/to/PARAMS_*
+    match_detect.py path/to/PARAMS_*
 
     # Option 2: Match specific params/files from YAML file (multi outdir)
 
-    match.py path/to/match.yaml
+    match_detect.py path/to/match_detect.yaml
 
 Evaluate all matches (this uses the footprint polygons generated below):  
 
     # Option 1: Evaluate all generated PARAMS files  
 
-    evaluate.py path/to/PARAMS_*
+    eval_detect.py path/to/PARAMS_*
 
     # Option 2: Evaluate specific params/files from YAML file  
 
-    evaluate.py path/to/match.yaml  # same file as above
+    eval_detect.py path/to/match_detect.yaml  # same file as above
 
 
 ### Compute footprint polygons (needed for matching)
@@ -105,42 +104,33 @@ Create a vector footprint for each scene and export the polygon to GCS as geojso
 
     # This is the same detection script with `export_footprint=True`  
 
-    export_footprints.py {the_date} {n_days} [sat]
+    export_foots.py {the_date} {n_days} [sat]
 
 Download footprints to local, convert to well known text, and upload to bigquery:  
 
     # Option 1: Upload all generated PARAMS files  
 
-    upload_footprints.py path/to/footprints/PARAMS_*
+    upload_foots.py path/to/footprints/PARAMS_*
 
     # Option 2: Upload specified days  
 
-    upload_footprints.py 2020-05-01 30
+    upload_foots.py 2020-05-01 30
 
 Rasterize footprint polygons in bigquery (at 0.05 deg resolution) [only needed for analysis]:  
 
-    rasterize_footprints.py {the_date} {n_days} [version]
+    rasterize_foots.py {the_date} {n_days} [version]
 
 
 ### Interpolate AIS positions (needed for matching)
 
 Interpolate AIS positions to the time of each scene and vessel (detection) locations:  
 
-    interpolate_ais.py {the_date} {n_days} [version]
+    interp_ais.py {the_date} {n_days} [version]
 
-
-### Evaluate false positives (only for assessment)
-
-Run Notebooks in this order
-
-    GetPotentialFalsePositives.py
-    GroupPotentialFalsePositives.py
-    LabelPotentialFalsePositives.py
-    EvaluatePotentialFalsePositives.py
 
 ### User-made script examples
 
-Run vessel detection for specific days (`run_detector.py`):  
+Run vessel detection for specific days, create `run_detector.py` as   
 
     from detector import DetectorVessel
     from utils import date_range
