@@ -17,12 +17,14 @@ from eliminate_ice_string import *
 eliminated_locations = eliminate_ice_string()
 
 matching_threshold = '7.4e-6'
-vessel_info_table = "gfw_research.vi_ssvid_v20221001"
+vessel_info_table = "gfw_research.vi_ssvid_v20230701"
+
+from proj_id import project_id # imports project_id
 
 
 # +
 
-predictions_table = '''
+predictions_table = f'''
   select 
     detect_id, 
     avg(fishing_33) fishing_score_low,
@@ -30,10 +32,10 @@ predictions_table = '''
     avg(fishing_66) fishing_score_high
   from
     (select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_even_v5*`
+    `{project_id}.proj_sentinel1_v20210924.fishing_pred_even_v5*`
     union all
     select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_odd_v5*`
+    `{project_id}.proj_sentinel1_v20210924.fishing_pred_odd_v5*`
     )
   group by 
     detect_id
@@ -52,7 +54,7 @@ select
   ssvid,
   if(on_fishing_list_known is not null, on_fishing_list_known, on_fishing_list_nn) as on_fishing_list
 from
-  `project-id.{vessel_info_table}`
+  `{project_id}.{vessel_info_table}`
   -- don't do anything with identity spoofing vessels!
   where activity.overlap_hours_multinames < 24
 ),
@@ -79,7 +81,7 @@ detections_table as
     length_m
     
   from
-  `project-id.proj_global_sar.detections_w_overpasses_v20230215`
+  `{project_id}.proj_global_sar.detections_w_overpasses_v20230803`
   where
   -- the following is very restrictive on repeated objects
   repeats_100m_180days_forward < 3 and
@@ -96,6 +98,8 @@ detections_table as
   -- very little difference between .5 and .7
   and presence > .7
   and not in_road_doppler
+  and not close_to_infra
+  and not potential_ambiguity
   {eliminated_locations}
   ) '''
 
@@ -109,6 +113,7 @@ select
   year,
   detect_lat,
   detect_lon,
+  detect_id,
   overpasses_2017_2021,
   eez_iso3,
   fishing_score,
@@ -123,6 +128,8 @@ select
   confidence,
   score,
   on_fishing_list,
+  ssvid, 
+  length_m
 from
   detections_table a
 left join

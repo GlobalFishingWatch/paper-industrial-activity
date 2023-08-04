@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -113,6 +113,7 @@ from
   final_table
 group by
   eez_iso3'''
+pyperclip.copy(q)
 
 
 # %%
@@ -138,6 +139,14 @@ df['perc_dark_non_fishing'] = round((df["dark non-fishing"]/ (df["dark non-fishi
 df['perc_dark_fishing'] = round((df["dark fishing"]/ (df["dark fishing"] + df["AIS fishing"]) * 100), 0).astype(int)
 
 # %%
+## How many total detections?
+pd.read_gbq(f'''
+{final_query_static} 
+select count(*)/1e6 from final_table
+''')
+
+# %%
+pyperclip.copy(final_query_static)
 
 # %%
 ## How many vessels detected on average?
@@ -176,6 +185,8 @@ df[df.eez_iso3=="CHN"].tot_fishing.sum()/df.tot_fishing.sum()
 df[df.eez_iso3=="CHN"].tot_nonfishing.sum()/df.tot_nonfishing.sum()
 
 # %%
+## fraction of dark nonfishing
+1 - df['AIS non-fishing'].sum()/df.tot_nonfishing.sum()
 
 # %%
 ais = df['AIS fishing'].sum()
@@ -198,6 +209,7 @@ lower = lower_bound_dark / (ais + lower_bound_dark)
 print(f"Fraction of dark non-fishing between {lower:.2f} and {upper:.2f}")
 
 # %%
+# mkdir ../figures
 
 # %%
 n = 20
@@ -257,7 +269,7 @@ axs[1].tick_params(axis='both', which='major', labelsize=14)
 plt.tight_layout()
 # import matplotlib.pyplot as plt
 
-plt.savefig('figures/barchart_fishing_nonfishing_eez.png', bbox_inches="tight", dpi = 300, facecolor='white')
+plt.savefig('../figures/barchart_fishing_nonfishing_eez.png', bbox_inches="tight", dpi = 300, facecolor='white')
 plt.show()
 
 
@@ -315,8 +327,12 @@ d = df.groupby(['continent']).sum()
 d[['AIS fishing','dark fishing','AIS non-fishing','dark non-fishing']]
 
 # %%
+d['dark_fishing_frac'] = 1- d['dark fishing']/(d['AIS fishing']+d['dark fishing'])
+d[['dark_fishing_frac','AIS fishing','dark fishing','AIS non-fishing','dark non-fishing']]
+
+# %%
 # data for the bar chart for figure 1
-d.to_csv('../data/vessels_bycontinent_v20230217.csv',index=False)
+d.to_csv('../data/vessels_bycontinent_v20230803.csv')
 
 # %%
 n = len(d)
@@ -358,3 +374,21 @@ d[["AIS non-fishing", "dark non-fishing"]].plot(
 plt.title("Non-Fishing Detections by Continent")
 
 # plt.errorbar(.25, 8000, xerr=[1000], fmt='')
+
+# %%
+# for supplemental table 1
+d.tot_fishing/d.tot_fishing.sum()
+
+# %%
+d.detections/d.detections.sum()
+
+# %%
+d['dark non-fishing']/d.tot_nonfishing
+
+# %%
+df[df.eez_iso3=="CHN"].tot_fishing.sum()/df.tot_fishing.sum()
+
+# %%
+df[df.eez_iso3=="CHN"].tot_nonfishing.sum()/df.tot_nonfishing.sum()
+
+# %%

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -17,7 +17,6 @@
 #
 # Composite objects are what we used in our paper, 
 
-# +
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as mpcolors
@@ -30,9 +29,6 @@ import cartopy.crs as ccrs
 import subprocess
 import os
 from concurrent.futures import ThreadPoolExecutor
-
-
-# -
 from datetime import datetime, timedelta, date
 from google.cloud import bigquery
 import pandas as pd

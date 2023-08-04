@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -25,6 +25,7 @@ import pyperclip
 import sys
 sys.path.append('../utils') 
 from vessel_queries import *
+from proj_id import project_id
 from bigquery_helper_functions import query_to_table, update_table_description
 
 # # Download with more details on each detection
@@ -50,11 +51,12 @@ select
   overpasses_2017_2021
 from
   final_table'''
+pyperclip.copy(q)
 
 # +
 ## Uncomment to run more
 
-table_id = 'project-id.proj_global_sar.detections_classified_v20230326'
+table_id = f'{project_id}.proj_global_sar.detections_classified_v20230803'
 query_to_table(q, table_id)
 
 
@@ -85,7 +87,7 @@ select
     when matched_category = 'unmatched' and random > fishing_score then 'dark_nonfishing'
     else "none" end as category_rand
 from 
- (select *, rand()  as random from  proj_global_sar.detections_classified_v20230326)
+ (select *, rand()  as random from  proj_global_sar.detections_classified_v20230803)
 ''')
 
 # save this *very large* data frame to a csv 
@@ -104,11 +106,30 @@ select lat, lon,
     when matched_category = 'unmatched' and random> fishing_score then 'dark_nonfishing'
     else "none" end as category_rand
 from 
- (select *, rand()  as random from  proj_global_sar.detections_classified_v20230326)
+ (select *, rand()  as random from  proj_global_sar.detections_classified_v20230803)
   where year = 2021
 ''')
 
 df.to_feather("../data/all_detections_matched_rand_2021.feather")
 # -
+df.head()
+
+df = pd.read_gbq('''
+
+select 
+lat, 
+lon,
+year,
+fishing_score,
+matched_category,
+overpasses_2017_2021
+from 
+proj_global_sar.detections_classified_v20230803
+
+''')
+
+df.to_feather("../data/all_detections_v20230803.feather")
+
+len(df)
 
 

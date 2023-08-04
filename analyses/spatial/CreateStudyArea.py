@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -40,6 +40,7 @@ from shapely.geometry import shape
 import sys
 sys.path.append('../utils') 
 from eliminate_ice_string import *
+from proj_id import project_id
 eliminated_locations = eliminate_ice_string()
 
 
@@ -58,7 +59,7 @@ q = f"""with overpasses_over_30 as
 lat_index,
 lon_index,
 sum(overpasses) overpasses
-from `project-id.proj_global_sar.overpasses_200_by_year_v20221031`  
+from `{project_id}.proj_global_sar.overpasses_200_by_year_v20221031`  
 where year between 2017 and 2021
 {eliminated_locations_index}
 group by lat_index,lon_index
