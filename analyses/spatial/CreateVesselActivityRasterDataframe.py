@@ -107,4 +107,11 @@ save_raster(5) # 10th of a degree is what we use for the main figures
 
 save_raster(20)
 
+df = pd.read_feather("../data/raster_5th_degree.feather")
+
+df.columns
+
+for c in df.columns:
+    print(c)
+
 

@@ -75,46 +75,6 @@ update_table_description(table_id,
 # This is downloading > 1gb of data, so it takes a long time
 
 df = pd.read_gbq('''
-select 
-    lat, lon, 
-    case when matched_category = 'matched_nonfishing' then 'matched_nonfishing'
-    when matched_category = 'matched_fishing' then 'matched_fishing'
-    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_fishing'
-    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_fishing'
-    when matched_category = 'matched_unknown' and random < fishing_score then 'matched_fishing'
-    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_nonfishing'
-    when matched_category = 'unmatched' and random < fishing_score then 'dark_fishing'
-    when matched_category = 'unmatched' and random > fishing_score then 'dark_nonfishing'
-    else "none" end as category_rand
-from 
- (select *, rand()  as random from  proj_global_sar.detections_classified_v20230803)
-''')
-
-# save this *very large* data frame to a csv 
-df.to_feather("../data/all_detections_matched_rand.feather")
-
-# +
-df = pd.read_gbq('''
-select lat, lon, 
-    case when matched_category = 'matched_nonfishing' then 'matched_nonfishing'
-    when matched_category = 'matched_fishing' then 'matched_fishing'
-    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_fishing'
-    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_fishing'
-    when matched_category = 'matched_unknown' and random < fishing_score then 'matched_fishing'
-    when matched_category = 'matched_unknown' and random > fishing_score then 'matched_nonfishing'
-    when matched_category = 'unmatched' and random < fishing_score then 'dark_fishing'
-    when matched_category = 'unmatched' and random> fishing_score then 'dark_nonfishing'
-    else "none" end as category_rand
-from 
- (select *, rand()  as random from  proj_global_sar.detections_classified_v20230803)
-  where year = 2021
-''')
-
-df.to_feather("../data/all_detections_matched_rand_2021.feather")
-# -
-df.head()
-
-df = pd.read_gbq('''
 
 select 
 lat, 
