@@ -352,13 +352,12 @@ d['dark_fishing_frac'] = 1- d['dark fishing']/(d['AIS fishing']+d['dark fishing'
 d[['dark_fishing_frac','AIS fishing','dark fishing','AIS non-fishing','dark non-fishing']]
 
 # %%
-d.columns
-
-# %%
+d
 
 # %%
 # data for the bar chart for figure 1
-d.to_csv('../data/vessels_bycontinent_v20230803.csv')
+d[['AIS fishing','dark fishing','AIS non-fishing','dark non-fishing']].to_csv('../data/vessels_bycontinent_v20230803.csv')
+
 
 # %%
 n = len(d)
