@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -34,11 +34,12 @@ eliminated_locations = eliminate_ice_string()
 
 # # Unsmoothed Time Series
 
-seen_table = "proj_global_sar.detections_24_w_zeroes_v20230219"
-interpolated_table = "scratch_fernando.detections_24_w_interp_v4"
+seen_table = "proj_global_sar.detections_24_w_zeroes_v20230815"
+interpolated_table = "scratch_fernando.detections_24_w_interp_v20230815"
+vessel_info_table = "gfw_research.vi_ssvid_v20230701"
+
 
 # +
-vessel_info_table = "gfw_research.vi_ssvid_v20221001"
 
 
 predictions_table = """
@@ -50,10 +51,10 @@ predictions_table = """
     avg(fishing_66) fishing_score_high
   from
     (select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_even_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_even_v5*`
     union all
     select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_odd_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_odd_v5*`
     )
   group by 
     detect_id
@@ -90,8 +91,8 @@ df = pd.read_gbq(q)
 df.head()
 
 plt.figure(figsize=(10,4))
-plt.plot(df.date_24, df.detections_seen, label = "detected")
-plt.plot(df.date_24, df.detections_seen+df.detections_interp, label = "detected + interpolated")
+plt.plot(df.date_24.values, df.detections_seen.values, label = "detected")
+plt.plot(df.date_24.values, (df.detections_seen+df.detections_interp).values, label = "detected + interpolated")
 plt.legend()
 plt.ylabel("total vessels per day")
 
@@ -102,9 +103,9 @@ df.detections_interp.sum()/(df.detections_seen.sum()+df.detections_interp.sum())
 (df.detections_seen+df.detections_interp).mean()
 
 # what fraction of the activity in our study area is in these areas that
-# we are using for thie time series? 64248 is the number of vessels we see on average
+# we are using for thie time series? 64500 is the number of vessels we see on average
 # everywhere that has at least 30 overpasses over 2017-2021
-61258/64248
+60322/64500
 
 # +
 
@@ -147,23 +148,25 @@ detections_table as
   overpasses_2017_2021,  
   7.4e-6 as dd_perkm2
   from
-  proj_global_sar.detections_w_overpasses_v20230215
+  proj_global_sar.detections_w_overpasses_v20230803
   where
-  -- the following is very restrictive on repeated objects
-  repeats_100m_180days_forward < 3 and
-  repeats_100m_180days_back < 3 and
-  repeats_100m_180days_center < 3
-  -- get rid of scenes where more than half the detections
-  -- are likely noise
-  and (scene_detections <=5 or scene_quality > .5)
-  and extract(date from detect_timestamp) 
-     between "2017-01-01" and "2021-12-31"
-  -- at least 10 overpasses
-  and overpasses_2017_2021 > 10
-  -- our cutoff for noise -- this could be adjusted down, but makes
-  -- very little difference between .5 and .7
-  and presence > .7
-  and not in_road_doppler
+    -- the following is very restrictive on repeated objects
+    repeats_100m_180days_forward < 3 and
+    repeats_100m_180days_back < 3 and
+    repeats_100m_180days_center < 3
+    -- get rid of scenes where more than half the detections
+    -- are likely noise
+    and (scene_detections <=5 or scene_quality > .5)
+    and extract(date from detect_timestamp)
+       between "2017-01-01" and "2021-12-31"
+    -- at least 10 overpasses
+    and overpasses_2017_2021 > 30
+    -- our cutoff for noise -- this could be adjusted down, but makes
+    -- very little difference between .5 and .7
+    and presence > .7
+    and not in_road_doppler
+    and not close_to_infra
+    and not potential_ambiguity
   {eliminated_locations}
   ),
 
@@ -231,7 +234,7 @@ order by rolling_date
 import pyperclip
 
 # uncomment to copy to clipboard
-# pyperclip.copy(q)
+pyperclip.copy(q)
 # -
 
 df_detect = pd.read_gbq(q)
@@ -260,12 +263,10 @@ df = df[
 ]
 df = df.groupby(["rolling_date", "eez_iso3"]).sum().reset_index()
 # -
+df_detect.head()
 
 
 
-
-
-df.head()
 
 # # Turn the interoplated positions into 24 day interpolations
 #
@@ -298,7 +299,7 @@ SELECT
   if(array_length(regions.eez)>0, regions.eez[ordinal(1)], null) MRGID,
   gridcode 
 FROM 
-  `project-id.pipe_static.spatial_measures_20201105` 
+  `pipe_static.spatial_measures_20201105` 
 ),
 
 
@@ -384,26 +385,27 @@ order by
 '''
 
 ## uncomment to copy to clipboard
-# pyperclip.copy(q)
+pyperclip.copy(q)
 
 # -
 
 df_int = pd.read_gbq(q)
 
+df_int['eez_iso3'].head()
 
-
-
+df_int['eez_iso3']=df_int['eez_iso3'].fillna("None")
 
 
 
 # +
-df_int['eez_iso3']=df_int['eez_iso3'].fillna("None")
 
 # pandas.merge() by Column
 df = pd.merge(df,df_int, how='outer',on=['eez_iso3','rolling_date']).reset_index()
 
 # replace nulls with 0s
-df = df.fillna(0)
+
+
+
 
 def get_multiples(x):
     '''we have multiples of 24 days to work with, so we can't include the 
@@ -421,6 +423,36 @@ df['include'] = df.rolling_date.apply(get_multiples)
 
 df['year'] = df.rolling_date.apply(lambda x: x.year)
 
+
+# -
+df.head()
+
+df[['ais_fishing',
+ 'dark_fishing',
+ 'ais_nonfishing',
+ 'dark_nonfishing',
+ 'ais_nonfishing100',
+ 'dark_nonfishing100',
+ 'ais_fishing_i',
+ 'ais_nonfishing_i',
+ 'dark_fishing_i',
+ 'dark_nonfishing_i',
+ 'ais_nonfishing100_i',
+ 'dark_nonfishing100_i']] = df[['ais_fishing',
+ 'dark_fishing',
+ 'ais_nonfishing',""
+ 'dark_nonfishing',
+ 'ais_nonfishing100',
+ 'dark_nonfishing100',
+ 'ais_fishing_i',
+ 'ais_nonfishing_i',
+ 'dark_fishing_i',
+ 'dark_nonfishing_i',
+ 'ais_nonfishing100_i',
+ 'dark_nonfishing100_i']].fillna(0)
+
+df.head()
+
 df["detections"] = (
     df["ais_fishing"]
     + df["dark_fishing"]
@@ -431,8 +463,6 @@ df["detections"] = (
     + df["dark_fishing_i"]
     + df["dark_nonfishing_i"]
 )
-# -
-df.head()
 
 df['fishing'] = df.ais_fishing + df.dark_fishing + df.ais_fishing_i + df.dark_fishing_i
 df['nonfishing'] = df.ais_nonfishing + df.dark_nonfishing + df.ais_nonfishing_i + df.dark_nonfishing_i
@@ -443,7 +473,15 @@ df.head()
 
 df[df.include==1].rolling_date.max()
 
-df.to_feather("../data/24day_rolling_augmented_v20230220.feather")
+# +
+# df.to_feather("../data/24day_rolling_augmented_v20230816.feather")
+# -
+
+df.to_csv("../data/24day_rolling_augmented_v20230816.csv", index=False)
+
+import pandas as pd
+df = pd.read_csv("../data/24day_rolling_augmented_v20230816.csv")
+df.head()
 
 # +
 plt.figure(figsize=(10, 4))
@@ -451,26 +489,26 @@ d = df[df.rolling_date >= date(2017, 1, 13)]
 d = d[d.rolling_date < date(2021, 12, 20)]
 d = d.groupby("rolling_date").sum().reset_index()
 plt.plot(
-    d.rolling_date,
+    d.rolling_date.values,
     (d.fishing)
     .rolling(3)
-    .median(),
+    .median().values,
     label = 'all fishing'
 )
 
 plt.plot(
-    d.rolling_date,
+    d.rolling_date.values,
     (d.dark_fishing + d.dark_fishing_i)
     .rolling(3)
-    .median(),
+    .median().values,
     label = 'dark fishing'
 )
 
 plt.plot(
-    d.rolling_date,
+    d.rolling_date.values,
     (d.ais_fishing + d.ais_fishing_i)
     .rolling(3)
-    .median(),
+    .median().values,
     label = 'ais fishing'
 )
 
@@ -484,26 +522,65 @@ d = df[df.rolling_date >= date(2017, 1, 13)]
 d = d[d.rolling_date < date(2021, 12, 20)]
 d = d.groupby("rolling_date").sum().reset_index()
 plt.plot(
-    d.rolling_date,
-    (d.nonfishing)
+    d.rolling_date.values,
+    (d.ais_fishing + d.ais_fishing_i)
     .rolling(3)
-    .median(),
+    .median().values / 
+    (d.dark_fishing + d.dark_fishing_i +d.ais_fishing + d.ais_fishing_i )
+    .rolling(3)
+    .median().values
+)
+
+plt.ylim(0,.5)
+# plt.plot(
+#     d.rolling_date.values,
+#     (d.dark_fishing + d.dark_fishing_i)
+#     .rolling(3)
+#     .median().values,
+#     label = 'dark fishing'
+# )
+
+# plt.plot(
+#     d.rolling_date.values,
+#     (d.ais_fishing + d.ais_fishing_i)
+#     .rolling(3)
+#     .median().values,
+#     label = 'ais fishing'
+# )
+plt.title("Fraction of fishing vessel activity with AIS")
+# plt.legend()
+# plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
+# plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
+# -
+
+
+
+# +
+plt.figure(figsize=(10, 4))
+d = df[df.rolling_date >= date(2017, 1, 13)]
+d = d[d.rolling_date < date(2021, 12, 20)]
+d = d.groupby("rolling_date").sum().reset_index()
+plt.plot(
+    d.rolling_date.values,
+    (d.dark_nonfishing + d.dark_nonfishing_i + d.ais_nonfishing + d.ais_nonfishing_i)
+    .rolling(3)
+    .median().values,
     label = 'all nonfishing'
 )
 
 plt.plot(
-    d.rolling_date,
+    d.rolling_date.values,
     (d.dark_nonfishing + d.dark_nonfishing_i)
     .rolling(3)
-    .median(),
+    .median().values,
     label = 'dark nonfishing'
 )
 
 plt.plot(
-    d.rolling_date,
+    d.rolling_date.values,
     (d.ais_nonfishing + d.ais_nonfishing_i)
     .rolling(3)
-    .median(),
+    .median().values,
     label = 'ais nonfishing'
 )
 
@@ -517,26 +594,26 @@ d = df[df.rolling_date >= date(2017, 1, 13)]
 d = d[d.rolling_date < date(2021, 12, 20)]
 d = d.groupby("rolling_date").sum().reset_index()
 plt.plot(
-    d.rolling_date,
-    (d.nonfishing100)
+    d.rolling_date.values,
+    (d.dark_nonfishing100 + d.dark_nonfishing100_i + d.ais_nonfishing100 + d.ais_nonfishing100_i )
     .rolling(3)
-    .median(),
+    .median().values,
     label = 'all nonfishing 100'
 )
 
 plt.plot(
-    d.rolling_date,
+    d.rolling_date.values,
     (d.dark_nonfishing100 + d.dark_nonfishing100_i)
     .rolling(3)
-    .median(),
+    .median().values,
     label = 'dark nonfishing 100'
 )
 
 plt.plot(
-    d.rolling_date,
+    d.rolling_date.values,
     (d.ais_nonfishing100 + d.ais_nonfishing100_i)
     .rolling(3)
-    .median(),
+    .median().values,
     label = 'ais nonfishing 100'
 )
 
@@ -551,24 +628,27 @@ d.head()
 d = df[df.include == 1]
 d.rolling_date.max()
 
+d.columns
+
 # +
 plt.figure(figsize=(10, 4))
 d = df[df.include == 1]
-d = d.groupby(["rolling_date","year"]).sum().reset_index()
+d = d.drop(columns=['rolling_date', 'index', 'eez_iso3'])
+d = d.groupby(["year"]).sum().reset_index()
 d = d.groupby("year").mean().reset_index()
 d["date"] = d.year.apply(lambda x: date(x, 7, 1))
 plt.plot(
-    d.date,
-    d.fishing,
+    d.date.values,
+    d.fishing.values,
     label="all fishing",
 )
 plt.plot(
-    d.date,
-    (d.dark_fishing + d.dark_fishing_i),
+    d.date.values,
+    (d.dark_fishing + d.dark_fishing_i).values,
     label="dark fishing",
 )
 
-plt.plot(d.date, (d.ais_fishing + d.ais_fishing_i), label="ais fishing")
+plt.plot(d.date.values, (d.ais_fishing + d.ais_fishing_i).values, label="ais fishing")
 
 plt.legend()
 
@@ -586,20 +666,21 @@ nonfishing_pandemic/nonfishing_prepandemic
 # +
 plt.figure(figsize=(10, 4))
 d = df[(df.include == 1)&(df.eez_iso3=="CHN")]
-d = d.groupby("year").mean().reset_index()
+d = d.drop(columns=['rolling_date', 'index', 'eez_iso3'])
+d = d.groupby(["year"]).sum().reset_index()
 d["date"] = d.year.apply(lambda x: date(x, 7, 1))
 plt.plot(
-    d.date,
-    (d.ais_fishing + d.dark_fishing + d.ais_fishing_i + d.dark_fishing_i),
+    d.date.values,
+    (d.ais_fishing + d.dark_fishing + d.ais_fishing_i + d.dark_fishing_i).values,
     label="all fishing",
 )
 plt.plot(
-    d.date,
-    (d.dark_fishing + d.dark_fishing_i),
+    d.date.values,
+    (d.dark_fishing + d.dark_fishing_i).values,
     label="dark fishing",
 )
 
-plt.plot(d.date, (d.ais_fishing + d.ais_fishing_i), label="ais fishing")
+plt.plot(d.date.values, (d.ais_fishing + d.ais_fishing_i).values, label="ais fishing")
 
 plt.legend()
 d
@@ -624,20 +705,21 @@ nonfishing_pandemic/nonfishing_prepandemic
 # +
 plt.figure(figsize=(10, 4))
 d = df[(df.include == 1)&(df.eez_iso3!="CHN")]
+d = d.drop(columns=['rolling_date', 'index', 'eez_iso3'])
 d = d.groupby("year").mean().reset_index()
 d["date"] = d.year.apply(lambda x: date(x, 7, 1))
 plt.plot(
-    d.date,
-    (d.ais_fishing + d.dark_fishing + d.ais_fishing_i + d.dark_fishing_i),
+    d.date.values,
+    (d.ais_fishing + d.dark_fishing + d.ais_fishing_i + d.dark_fishing_i).values,
     label="all fishing",
 )
 plt.plot(
-    d.date,
-    (d.dark_fishing + d.dark_fishing_i),
+    d.date.values,
+    (d.dark_fishing + d.dark_fishing_i).values,
     label="dark fishing",
 )
 
-plt.plot(d.date, (d.ais_fishing + d.ais_fishing_i), label="ais fishing")
+plt.plot(d.date.values, (d.ais_fishing + d.ais_fishing_i).values, label="ais fishing")
 
 plt.legend()
 # -
@@ -649,3 +731,5 @@ fishing_pandemic/fishing_prepandemic
 nonfishing_prepandemic = d[d.year.isin([2018,2019])].nonfishing.mean()
 nonfishing_pandemic = d[d.year.isin([2020,2021])].nonfishing.mean()
 nonfishing_pandemic/nonfishing_prepandemic
+
+

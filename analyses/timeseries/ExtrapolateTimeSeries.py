@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -14,19 +14,15 @@
 # ---
 
 # +
-import pandas as pd
-from google.cloud import bigquery
-from google.cloud.exceptions import NotFound
-
-
-client: bigquery.Client = bigquery.Client(project="project-id")
-
 
 # Get the query templates
 import sys
 
 sys.path.append("../utils")
 from vessel_queries import *
+
+# project id
+from proj_id import project_id
 
 # ice string elimination
 from eliminate_ice_string import eliminate_ice_string
@@ -36,9 +32,16 @@ eliminated_locations = eliminate_ice_string()
 # biguquery helper functions
 from bigquery_helper_functions import query_to_table, update_table_description
 
+import pandas as pd
+from google.cloud import bigquery
+from google.cloud.exceptions import NotFound
+
+client: bigquery.Client = bigquery.Client(project=project_id)
+
+
 
 # +
-vessel_info_table = "gfw_research.vi_ssvid_v20221001"
+vessel_info_table = "gfw_research.vi_ssvid_v20230701"
 
 
 predictions_table = """
@@ -50,10 +53,10 @@ predictions_table = """
     avg(fishing_66) fishing_score_high
   from
     (select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_even_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_even_v5*`
     union all
     select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_odd_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_odd_v5*`
     )
   group by 
     detect_id
@@ -64,7 +67,7 @@ predictions_table = """
 query = f'''with 
 
 detection_source_table as 
-(select * from `project-id.proj_global_sar.detections_w_overpasses_v20230215`),
+(select * from `proj_global_sar.detections_w_overpasses_v20230803`),
 
 
 all_dates as
@@ -72,7 +75,7 @@ all_dates as
 (SELECT 
   distinct(date_24) date 
 FROM 
-  `project-id.proj_global_sar.detections_w_overpasses_v20230215` 
+  detection_source_table
 where 
   date_24 between "2017-01-01" and "2021-12-31"
 ),
@@ -98,7 +101,7 @@ expensive_table as
   overpasses,
   date
 FROM 
-  `project-id.proj_global_sar.overpasses_200_every24days_v20220805` 
+  `proj_global_sar.overpasses_200_every24days_v20220805` 
 ),
 
 
@@ -168,13 +171,15 @@ detections_table as
     -- are likely noise
     and (scene_detections <=5 or scene_quality > .5)
     and extract(date from detect_timestamp)
-      between "2017-01-01" and "2021-12-31"
-  -- our cutoff for noise -- this could be adjusted down, but makes
-  -- very little difference between .5 and .7
+       between "2017-01-01" and "2021-12-31"
+    -- at least 10 overpasses
+    and overpasses_2017_2021 > 30
+    -- our cutoff for noise -- this could be adjusted down, but makes
+    -- very little difference between .5 and .7
     and presence > .7
-    and periods24_with_overpass >= 70
-    -- make sure it isn't close to a road
     and not in_road_doppler
+    and not close_to_infra
+    and not potential_ambiguity
     {eliminated_locations}
   ),
 
@@ -254,13 +259,12 @@ left join
   detections_without_zeros
 using(lat_index, lon_index, date_24)
 
-
 '''
 
 import pyperclip
 pyperclip.copy(query)
 
-query_to_table(query, 'project-id.proj_global_sar.detections_24_w_zeroes_v20230219')
+query_to_table(query, f'{project_id}.proj_global_sar.detections_24_w_zeroes_v20230815')
 
 # +
 
@@ -269,7 +273,7 @@ This identifies where there are missing values in the 24 day time series. The qu
 
 ''' + query
 
-update_table_description("project-id.proj_global_sar.detections_24_w_zeroes_v20230219", 
+update_table_description(f"{project_id}.proj_global_sar.detections_24_w_zeroes_v20230815", 
                         description)
 # -
 
@@ -288,7 +292,7 @@ sum(ais_fishing + ais_nonfishing + dark_fishing + dark_nonfishing) as detections
  seen_table as 
 (
  select date_24, sum(detections) detections_seen
-  from scratch_david.detections_24_w_zeroes 
+  from proj_global_sar.detections_24_w_zeroes_v20230815 
  group by date_24 order by date_24
 
 )
@@ -310,8 +314,13 @@ import matplotlib.pyplot as plt
 
 df.head()
 
-plt.plot(df.date_24, df.detections_seen, label = "detected")
-plt.plot(df.date_24, df.detections_seen+df.detections_interp, label = "detected + interpolated")
+plt.plot(df.date_24.values, df.detections_seen.values, label = "detected")
+plt.plot(df.date_24.values, (df.detections_seen+df.detections_interp).values, label = "detected + interpolated")
+plt.legend()
+plt.ylabel("total vessels per day")
+
+plt.plot(df.date_24.values, df.detections_seen.values, label = "detected")
+plt.plot(df.date_24.values, (df.detections_seen+df.detections_interp).values, label = "detected + interpolated")
 plt.legend()
 plt.ylabel("total vessels per day")
 
@@ -327,14 +336,14 @@ df.detections_interp.sum()/(df.detections_seen+df.detections_interp).sum()
 q = f''' with 
 
 detection_source_table as 
-(select * from `project-id.proj_global_sar.detections_w_overpasses_v20220929`),
+(select * from `proj_global_sar.detections_w_overpasses_v20220929`),
 
 ssel_info as (
 select
   ssvid,
   if(on_fishing_list_known is not null, on_fishing_list_known, on_fishing_list_nn) as on_fishing_list
 from
-   `project-id.gfw_research.vi_ssvid_v20221101`
+   `gfw_research.vi_ssvid_v20221101`
   -- don't do anything with identity spoofing vessels!
   where activity.overlap_hours_multinames < 24
 ),
@@ -405,13 +414,11 @@ d2 = df_c[df_c.category_seen == 'almost_enough']
 d3 = df_c[df_c.category_seen == 'not_enough']
 
 # plt.plot(d1.date_24, d2.detections+d1.detections)
-plt.plot(d2.date_24, d2.detections, label = "70 to 76 overpasses")
-plt.plot(d1.date_24, d1.detections, label = "77 overpasses")
-plt.plot(d3.date_24, d3.detections, label = "under 70")
+plt.plot(d2.date_24.values, d2.detections.values, label = "70 to 76 overpasses")
+plt.plot(d1.date_24.values, d1.detections.values, label = "77 overpasses")
+plt.plot(d3.date_24.values, d3.detections.values, label = "under 70")
 plt.legend()
 plt.title('detectiosn by 24 day period overpass category')
 # -
-
-d1.date_24.values
 
 

@@ -47,8 +47,6 @@ import sys
 sys.path.append('../utils') 
 from vessel_queries import *
 
-
-
 # %%
 import pycountry
 from pycountry_convert import (
@@ -209,6 +207,29 @@ lower = lower_bound_dark / (ais + lower_bound_dark)
 print(f"Fraction of dark non-fishing between {lower:.2f} and {upper:.2f}")
 
 # %%
+ais_nonfish = int(df['AIS non-fishing'].sum())
+ais_fish = int(df['AIS fishing'].sum())
+dark = int(df.unmatched_nonfishing.sum() + df.unmatched_fishing.sum())
+ais = ais_nonfish + ais_fish
+
+ais_nonfish, ais_fish, dark, ais
+
+# %%
+dark_fish_low = int(df.unmatched_fishing_low.sum())
+dark_fish_high = int(df.unmatched_fishing_high.sum())
+dark_fish_low, dark_fish_high, dark_fish_high-dark_fish_low, (dark_fish_high-dark_fish_low)/dark
+
+# %%
+dark_fish = int(df.unmatched_fishing.sum())
+dark_nonfish = int(df.unmatched_nonfishing.sum())
+print(f"""fishing: {dark_fish} ({dark_fish_low}-{dark_fish_high})
+nonfishing: {dark-dark_fish} ({dark-dark_fish_high}-{dark-dark_fish_low})""" )
+
+# %%
+
+# %%
+
+# %%
 # mkdir ../figures
 
 # %%
@@ -329,6 +350,11 @@ d[['AIS fishing','dark fishing','AIS non-fishing','dark non-fishing']]
 # %%
 d['dark_fishing_frac'] = 1- d['dark fishing']/(d['AIS fishing']+d['dark fishing'])
 d[['dark_fishing_frac','AIS fishing','dark fishing','AIS non-fishing','dark non-fishing']]
+
+# %%
+d.columns
+
+# %%
 
 # %%
 # data for the bar chart for figure 1
