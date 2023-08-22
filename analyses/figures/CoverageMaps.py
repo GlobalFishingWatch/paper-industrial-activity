@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -44,15 +44,13 @@ eliminated_locations = eliminated_locations[len("and not"):]
 
 q = f"""
 SELECT 
-extract(year from _partitiontime) year,
-extract(year from _partitiontime)*10 + floor(extract(dayofyear from _partitiontime)/366.5*4) quarter,
 lat_index,
 lon_index, 
 {eliminated_locations} in_ice_region,
 sum(overpasses) overpasses 
-FROM `project-id.proj_sentinel1_v20210924.detect_foot_raster_10` 
+FROM `proj_sentinel1_v20210924.detect_foot_raster_10` 
 where date(_partitiontime) between "2017-01-01" and "2021-12-31"
-group by lat_index, lon_index, year, quarter, in_ice_region
+group by lat_index, lon_index, in_ice_region
   
 """
 df = pd.read_gbq(q)
@@ -100,7 +98,7 @@ with psm.context(psm.styles.light):
 #         origin="lower",
 #     )
 # plt.title("Sentinel-1 Overpasses, 2017-2021",fontsize=15)
-plt.savefig(f"figures/overpasses_2017_2021_light_deep.png",dpi=300, bbox_inches="tight")
+plt.savefig(f"figures/overpasses_2017_2021_light_deep.jpg",dpi=300, bbox_inches="tight")
 # -
 
 

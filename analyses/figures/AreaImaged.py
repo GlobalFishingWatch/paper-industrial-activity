@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -33,13 +33,13 @@ plt.rcParams['axes.facecolor'] = 'white'
 q = '''SELECT 
 _partitiontime date,
 sum(cos(lat_index/10*3.14/180)*111*111*.1*.1) area
-FROM `project-id.proj_sentinel1_v20210924.detect_foot_raster_10` 
+FROM `proj_sentinel1_v20210924.detect_foot_raster_10` 
 group by date order by date'''
 df = pd.read_gbq(q)
 
 # +
 fig, ax = plt.subplots(figsize=(8,4))
-plt.plot(df.date, df.area.rolling(12).mean())
+plt.plot(df.date.values, df.area.rolling(12).mean().values)
 plt.ylim(0,1.5e7)
 # plt.title("Area of ocean imaged each day by Sentinel-1\n12 day rolling average")
 plt.ylabel("Area per day, square km")
@@ -48,11 +48,11 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b'))
 for label in ax.get_xticklabels(which='major'):
     label.set(rotation=30, horizontalalignment='right')
 
-plt.savefig("figures/AreaImaged.png",dpi = 300, bbox_inches="tight",facecolor="white")
+plt.savefig("figures/AreaImaged.jpeg",dpi = 300, bbox_inches="tight",facecolor="white")
 # -
 
 plt.figure(figsize=(8,5))
-plt.plot(df.date, df.area)
+plt.plot(df.date.values, df.area.values)
 plt.ylim(0,1.5e7)
 plt.title("Area of ocean imaged each day by sentinel-1")
 plt.ylabel("area per day, square km")

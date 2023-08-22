@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -33,7 +33,7 @@ import sys
 sys.path.append('../utils') 
 from vessel_queries import *
 
-seen_table = "proj_global_sar.detections_24_w_zeroes_v20230219"
+seen_table = "proj_global_sar.detections_24_w_zeroes_v2023019"
 interpolated_table = "proj_global_sar.detections_24_w_interp_v4"
 
 # +
@@ -150,7 +150,9 @@ df = df.groupby(["rolling_date", "eez_iso3"]).sum().reset_index()
 
 
 
-interpolated_table
+# +
+# interpolated_table
+# -
 
 
 
@@ -187,7 +189,7 @@ SELECT
   if(array_length(regions.eez)>0, regions.eez[ordinal(1)], null) MRGID,
   gridcode 
 FROM 
-  `project-id.pipe_static.spatial_measures_20201105` 
+  `pipe_static.spatial_measures_20201105` 
 ),
 
 
@@ -290,7 +292,29 @@ df_int_nk['eez_iso3']=df_int_nk['eez_iso3'].fillna("None")
 df = pd.merge(df,df_int_nk, how='outer',on=['eez_iso3','rolling_date']).reset_index()
 
 # replace nulls with 0s
-df = df.fillna(0)
+df[['ais_fishing',
+ 'dark_fishing',
+ 'ais_nonfishing',
+ 'dark_nonfishing',
+ 'ais_nonfishing100',
+ 'dark_nonfishing100',
+ 'ais_fishing_i',
+ 'ais_nonfishing_i',
+ 'dark_fishing_i',
+ 'dark_nonfishing_i',
+ 'ais_nonfishing100_i',
+ 'dark_nonfishing100_i']] = df[['ais_fishing',
+ 'dark_fishing',
+ 'ais_nonfishing',""
+ 'dark_nonfishing',
+ 'ais_nonfishing100',
+ 'dark_nonfishing100',
+ 'ais_fishing_i',
+ 'ais_nonfishing_i',
+ 'dark_fishing_i',
+ 'dark_nonfishing_i',
+ 'ais_nonfishing100_i',
+ 'dark_nonfishing100_i']].fillna(0)
 
 def get_multiples(x):
     '''we have multiples of 24 days to work with, so we can't include the 
@@ -318,10 +342,6 @@ df["detections"] = (
     + df["dark_fishing_i"]
     + df["dark_nonfishing_i"]
 )
-# -
-
-
-
 # +
 fig, ax = plt.subplots(figsize=(10, 4),facecolor="white")
 
@@ -336,10 +356,10 @@ d = d[d.rolling_date < date(2021, 12, 20)]
 d = d.groupby("rolling_date").sum().reset_index()
 
 ax.plot(
-    d.rolling_date,
+    d.rolling_date.values,
     (d.dark_fishing + d.dark_fishing_i+d.ais_fishing + d.ais_fishing_i)
     .rolling(3)
-    .mean(),
+    .mean().values,
     label = 'dark fishing'
 )
 
@@ -351,7 +371,7 @@ ax.set_ylim(0,2300)
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b'))
 for label in ax.get_xticklabels(which='major'):
     label.set(rotation=30, horizontalalignment='right')
-plt.savefig("figures/WNorthKoreaFishing.png",bbox_inches='tight',dpi=300)
+plt.savefig("figures/WNorthKoreaFishing.jpg",bbox_inches='tight',dpi=300)
 # plt.legend()
 # plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
 # plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
