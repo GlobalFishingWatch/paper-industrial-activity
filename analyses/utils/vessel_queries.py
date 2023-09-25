@@ -81,7 +81,7 @@ detections_table as
     length_m
     
   from
-  `{project_id}.proj_global_sar.detections_w_overpasses_v20230803`
+  `{project_id}.proj_global_sar.detections_w_overpasses_v20230922`
   where
   -- the following is very restrictive on repeated objects
   repeats_100m_180days_forward < 3 and

@@ -541,7 +541,118 @@ plt.ylim(0,.5)
 # )
 
 # plt.plot(
+#     d.rolling_date.values,|
+#     (d.ais_fishing + d.ais_fishing_i)
+#     .rolling(3)
+#     .median().values,
+#     label = 'ais fishing'
+# )
+plt.title("Fraction of fishing vessel activity with AIS")
+# plt.legend()
+# plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
+# plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
+# +
+plt.figure(figsize=(10, 4))
+d = df[df.rolling_date >= date(2017, 1, 13)]
+d = d[d.rolling_date < date(2021, 12, 20)]
+d = d[d.eez_iso3 != "CHN"]
+d = d.groupby("rolling_date").sum().reset_index()
+plt.plot(
+    d.rolling_date.values,
+    (d.ais_fishing + d.ais_fishing_i)
+    .rolling(3)
+    .median().values / 
+    (d.dark_fishing + d.dark_fishing_i +d.ais_fishing + d.ais_fishing_i )
+    .rolling(3)
+    .median().values,
+    label = "non-chinese"
+)
+
+
+# d = df[df.rolling_date >= date(2017, 1, 13)]
+# d = d[d.rolling_date < date(2021, 12, 20)]
+# d = d[d.eez_iso3 == "CHN"]
+# d = d.groupby("rolling_date").sum().reset_index()
+# plt.plot(
 #     d.rolling_date.values,
+#     (d.ais_fishing + d.ais_fishing_i)
+#     .rolling(3)
+#     .median().values / 
+#     (d.dark_fishing + d.dark_fishing_i +d.ais_fishing + d.ais_fishing_i )
+#     .rolling(3)
+#     .median().values,
+#     label = "chinese"
+# )
+
+# plt.legend()
+
+plt.ylim(0,.6)
+# plt.plot(
+#     d.rolling_date.values,
+#     (d.dark_fishing + d.dark_fishing_i)
+#     .rolling(3)
+#     .median().values,
+#     label = 'dark fishing'
+# )
+
+# plt.plot(
+#     d.rolling_date.values,|
+#     (d.ais_fishing + d.ais_fishing_i)
+#     .rolling(3)
+#     .median().values,
+#     label = 'ais fishing'
+# )
+plt.title("Fraction of non-Chinese fishing vessel activity with AIS")
+# plt.legend()
+# plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
+# plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
+
+# +
+plt.figure(figsize=(10, 4))
+d = df[df.rolling_date >= date(2017, 1, 13)]
+d = d[d.rolling_date < date(2021, 12, 20)]
+d = d[d.eez_iso3 == "CHN"]
+d = d.groupby("rolling_date").sum().reset_index()
+plt.plot(
+    d.rolling_date.values,
+    (d.ais_fishing + d.ais_fishing_i)
+    .rolling(3)
+    .median().values / 
+    (d.dark_fishing + d.dark_fishing_i +d.ais_fishing + d.ais_fishing_i )
+    .rolling(3)
+    .median().values,
+    label = "chinese"
+)
+
+
+# d = df[df.rolling_date >= date(2017, 1, 13)]
+# d = d[d.rolling_date < date(2021, 12, 20)]
+# d = d[d.eez_iso3 == "CHN"]
+# d = d.groupby("rolling_date").sum().reset_index()
+# plt.plot(
+#     d.rolling_date.values,
+#     (d.ais_fishing + d.ais_fishing_i)
+#     .rolling(3)
+#     .median().values / 
+#     (d.dark_fishing + d.dark_fishing_i +d.ais_fishing + d.ais_fishing_i )
+#     .rolling(3)
+#     .median().values,
+#     label = "chinese"
+# )
+
+# plt.legend()
+
+# plt.ylim(0,.6)
+# plt.plot(
+#     d.rolling_date.values,
+#     (d.dark_fishing + d.dark_fishing_i)
+#     .rolling(3)
+#     .median().values,
+#     label = 'dark fishing'
+# )
+
+# plt.plot(
+#     d.rolling_date.values,|
 #     (d.ais_fishing + d.ais_fishing_i)
 #     .rolling(3)
 #     .median().values,
@@ -552,6 +663,7 @@ plt.title("Fraction of fishing vessel activity with AIS")
 # plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
 # plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
 # -
+
 
 
 

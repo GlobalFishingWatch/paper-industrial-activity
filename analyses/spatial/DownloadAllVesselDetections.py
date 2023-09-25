@@ -56,7 +56,7 @@ pyperclip.copy(q)
 # +
 ## Uncomment to run more
 
-table_id = f'{project_id}.proj_global_sar.detections_classified_v20230803'
+table_id = f'{project_id}.proj_global_sar.detections_classified_v20230922'
 query_to_table(q, table_id)
 
 
@@ -84,11 +84,13 @@ fishing_score,
 matched_category,
 overpasses_2017_2021
 from 
-proj_global_sar.detections_classified_v20230803
+proj_global_sar.detections_classified_v20230922
 
 ''')
 
-df.to_feather("../data/all_detections_v20230803.feather")
+df.to_feather("../data/all_detections_v20230922.feather")
+
+len(df)
 
 len(df)
 

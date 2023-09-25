@@ -113,5 +113,3 @@ df.columns
 
 for c in df.columns:
     print(c)
-
-

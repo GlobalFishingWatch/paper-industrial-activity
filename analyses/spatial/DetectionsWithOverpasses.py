@@ -1323,8 +1323,9 @@ infrastructure as
   select 
     st_geogpoint(lon, lat) as pos 
   from (
-      SELECT distinct cluster_number, st_y(clust_centr_final) as lat, 
-      st_x(clust_centr_final) as lon FROM proj_sentinel1_v20210924.detect_comp_cluster_locations_20230623
+      SELECT distinct cluster_number, st_y(st_geogfromtext(clust_centr_final)) as lat, 
+      st_x(st_geogfromtext(clust_centr_final)) as lon 
+      FROM proj_sentinel1_v20210924.detect_comp_cluster_locations_v20230810
     )
 ),
 
@@ -1379,7 +1380,84 @@ The query to make it:
 
 update_table_description(table_id, description)
 # -
+# # Version 20230922
+#
+# The exact same as the previous, but use an improved method for removing amgiuties that relies on the angle to the ambigutiy for each of the three sub-swaths instead of the binned method we used before.
+#
+#
 
+# +
+q = f"""with detections as (
+  select 
+    * except(row) 
+  from 
+   (select *, row_number() over (partition by detect_id order by rand()) as row
+   from proj_global_sar.detections_w_overpasses_v20230420 )
+   where row = 1 -- oops, previous version had duplicates
+),
+
+infrastructure as 
+(
+  select 
+    st_geogpoint(lon, lat) as pos 
+  from (
+      SELECT distinct cluster_number, st_y(st_geogfromtext(clust_centr_final)) as lat, 
+      st_x(st_geogfromtext(clust_centr_final)) as lon 
+      FROM proj_sentinel1_v20210924.detect_comp_cluster_locations_v20230810
+    )
+),
+
+
+bad_detects as (
+  select 
+    distinct 
+    detect_id, 
+  from 
+    detections a
+  cross join
+    infrastructure b
+  where
+    st_distance(st_geogpoint(detect_lon, detect_lat), b.pos) < 200
+),
+
+potential_ambiguities as (
+  select 
+    distinct detect_id from proj_global_sar.potential_S1_amgibuities_v2_2017_2021
+  where 
+  line_dist < 200
+  and ambiguity_length < source_length
+)
+
+select 
+  * ,
+  bad_detects.detect_id is not null as close_to_infra,
+  potential_ambiguities.detect_id is not null as potential_ambiguity
+from 
+  detections 
+left join
+  bad_detects
+using(detect_id)
+left join
+  potential_ambiguities
+using(detect_id)"""
+
+
+
+table_id = f"{project_id}.proj_global_sar.detections_w_overpasses_v20230922"
+query_to_table(q, table_id)
+
+description = (
+    """detections with overpasses, using the same table as detections_w_overpasses_v20230803 except it uses 
+    a version of ambiguities that uses the angle to the ambiguity instead of distance to the ambituity.
+    
+
+The query to make it: 
+"""
+    + q
+)
+
+update_table_description(table_id, description)
+# -
 
 
 # # Now, an exciting table... this one is expensive 
