@@ -24,24 +24,25 @@ import seaborn as sns
 sns.set_theme(style="whitegrid")
 
 # %%
-oil_bplot = pd.read_csv('../../paper-industrial-activity/analyses/data/infra_barplot_oil_v20230815.csv')
+oil_bplot = pd.read_csv('../../prj-global-sar-analysis/data/infra_barplot_oil_v20230816.csv')
 
 # %%
-wind_bplot = pd.read_csv('../../paper-industrial-activity/analyses/data/infra_barplot_wind_v20230815.csv')
+wind_bplot = pd.read_csv('../../prj-global-sar-analysis/data/infra_barplot_wind_v20230816.csv')
 
 # %%
 oil_bplot = oil_bplot[:15]
 wind_bplot = wind_bplot[:6]
 
 # %%
-infra_plot = pd.merge(oil_bplot, wind_bplot, how='outer')
+oil_bplot.replace('United Arab Emirates', 'Emirates', inplace=True)
+wind_bplot.replace('United Arab Emirates', 'Emirates', inplace=True)
 
 # %%
-fig1, axs = plt.subplots(ncols=1, nrows=2, gridspec_kw={'height_ratios': [2, 1]},figsize=(10,20))
+fig1, axs = plt.subplots(ncols=1, nrows=2, figsize=(5,12), gridspec_kw={'height_ratios': [2, 1]})
 sns.set(style = 'whitegrid')
 
 b1 = oil_bplot.set_index('country_name').plot(
-    kind="barh", stacked=True, width=0.8, 
+    kind="barh", stacked=True, width=0.7, 
     color = ['#003f5c', '#ffa600'], ax = axs[0]).invert_yaxis()
 
 
@@ -51,15 +52,15 @@ for x, y in enumerate(oil_bplot.sum(axis=1).astype(int)):
 
 
 b2 = wind_bplot.set_index('country_name').plot(ax=axs[1],
-    kind="barh", stacked=True, width=0.65, 
+    kind="barh", stacked=True, width=0.7, 
     color = ['#003f5c', '#ffa600']).invert_yaxis()
 
 for x, y in enumerate(wind_bplot.sum(axis=1).astype(int)):
     axs[1].annotate(y, (y, x), ha='left', va='center', size=14, xytext=(3, 0),
     color = '#003f5c', textcoords='offset points')
 
-axs[0].set_title("Oil Infrastructure 2021", fontsize = 16)
-axs[1].set_title("Wind Infrastructure 2021", fontsize = 16)
+axs[0].set_title("Oil Infrastructure 2021", fontsize = 17)
+axs[1].set_title("Wind Infrastructure 2021", fontsize = 17)
 for i in axs:
     i.spines['top'].set_visible(False)
     i.spines['right'].set_visible(False)
@@ -71,12 +72,12 @@ for i in axs:
 
 axs[0].get_legend().remove()
 axs[1].get_legend().remove()
-axs[0].legend(labels = ['oil ', 'probable oil'], frameon=False, fontsize = 20, loc = 'lower right')
-axs[1].legend(labels = ['wind ', 'probable wind'], frameon=False, fontsize = 20, loc = 'lower right')
+axs[0].legend(labels = ['oil ', 'probable oil'], frameon=False, fontsize = 16, loc = 'lower right', bbox_to_anchor=(.94, 0))
+axs[1].legend(labels = ['wind ', 'probable wind'], frameon=False, fontsize = 16, loc = 'lower right', bbox_to_anchor=(1.006, 0))
 
 
-axs[0].tick_params(axis='both', which='major', labelsize=14)
-axs[1].tick_params(axis='both', which='major', labelsize=14)
+axs[0].tick_params(axis='both', which='major', labelsize=15)
+axs[1].tick_params(axis='both', which='major', labelsize=15)
 
 plt.savefig('barchart_oil_wind_eez.jpeg', bbox_inches="tight", dpi = 300)
 plt.show()

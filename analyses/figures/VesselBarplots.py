@@ -34,6 +34,9 @@ df['perc_dark_non_fishing'] = round((df["dark non-fishing"]/ (df["dark non-fishi
 df['perc_dark_fishing'] = round((df["dark fishing"]/ (df["dark fishing"] + df["AIS fishing"]) * 100), 0).astype(int)
 
 # %%
+df.replace('United Arab Emirates', 'Emirates', inplace=True)
+
+# %%
 n = 20
 d_fishing = df
 d_fishing = d_fishing.groupby("country_name").sum().reset_index().replace('', 'None')
@@ -47,29 +50,29 @@ df_non_fishing = df_non_fishing.set_index('country_name')
 df_non_fishing = df_non_fishing.sort_values("tot_nonfishing", ascending=False)
 df_non_fishing = df_non_fishing.head(n)
 
-fig1, axs = plt.subplots(ncols=2, nrows=1,figsize=(11, 13))
+fig1, axs = plt.subplots(ncols=2, nrows=1,figsize=(11, 9))
 sns.set(style = 'whitegrid')
 
 b1 = d_fishing[["dark fishing", "AIS fishing"]].plot(
-    kind="barh", stacked=True, width=0.8, 
-    color = [ '#FD7F0C', 'steelblue'], ax = axs[0],).invert_yaxis()
+    kind="barh", stacked=True, width=0.7, 
+    color = [ '#ca0020', '#2c7bb6'], ax = axs[0],).invert_yaxis()
 
 
 for x, y in enumerate(d_fishing['perc_dark_fishing']):
     axs[0].annotate(f'{y}%', (d_fishing[["dark fishing", "AIS fishing"]].sum(axis=1).astype(int)[x], x), ha='left', va='center', size=14, xytext=(3, 0),
-    color = '#FD7F0C', textcoords='offset points')
+    color = '#ca0020', textcoords='offset points')
 
 
 b2 = df_non_fishing[["dark non-fishing", "AIS non-fishing"]].plot(ax=axs[1],
-    kind="barh", stacked=True, width=0.8, 
-    color = [ '#FD7F0C', 'steelblue']).invert_yaxis()
+    kind="barh", stacked=True, width=0.7, 
+    color = [ '#ca0020', '#2c7bb6']).invert_yaxis()
 
 for x, y in enumerate(df_non_fishing['perc_dark_non_fishing']):
     axs[1].annotate(f'{y}%', (df_non_fishing[["dark non-fishing", "AIS non-fishing"]].sum(axis=1).astype(int)[x], x), ha='left', va='center', size=14, xytext=(3, 0),
-    color = '#FD7F0C', textcoords='offset points')
+    color = '#ca0020', textcoords='offset points')
 
-axs[0].set_title("Fishing Activity by EEZ", fontsize = 16)
-axs[1].set_title("Non-fishing Activity by EEZ", fontsize = 16)
+axs[0].set_title("Fishing Activity by EEZ", fontsize = 17)
+axs[1].set_title("Non-fishing Activity by EEZ", fontsize = 17)
 for i in axs:
     i.spines['top'].set_visible(False)
     i.spines['right'].set_visible(False)
@@ -81,10 +84,12 @@ for i in axs:
 
 axs[0].get_legend().remove()
 axs[1].get_legend().remove()
-axs[1].legend(labels = ['dark activity', 'publicly tracked'], frameon=False, fontsize = 15, loc = 'lower right')
+axs[1].legend(labels = ['not publicly tracked', 'publicly tracked'], frameon=False, fontsize = 16, loc = 'lower right', bbox_to_anchor=(1.065, 0))
 
-axs[0].tick_params(axis='both', which='major', labelsize=14)
-axs[1].tick_params(axis='both', which='major', labelsize=14)
+axs[0].tick_params(axis='both', which='major', labelsize=15)
+axs[1].tick_params(axis='both', which='major', labelsize=15)
+axs[0].set_axisbelow(True)
+axs[1].set_axisbelow(True)
 
 plt.tight_layout()
 
@@ -92,6 +97,60 @@ plt.savefig('barchart_fishing_nonfishing_eez.jpeg', bbox_inches="tight", dpi = 3
 plt.show()
 
 
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
+
+# %%
 
 # %%
 
