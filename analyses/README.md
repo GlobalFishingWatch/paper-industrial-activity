@@ -1,4 +1,4 @@
-## Code for analyses and figures
+## Code for analysis and figures
 
     .
     ├── features        # environmental rasters for model features
@@ -7,14 +7,15 @@
     ├── matching        # AIS to SAR detections matching pipeline
     ├── rasterize       # rasterization of SAR footprints
     ├── roads           # filtering of ambiguities from vehicles
-    ├── spatial         # spatial analyses and creation of data for figures
+    ├── spatial         # spatial analysis and creation of data for figures
     ├── timeseries      # moving window and interpolation of time series
+    ├── uncertainty     # bootstrap standard error of percent change
     └── utils           # shared functionality for analyses
 
 
 ## Building conda environment
 
-The packages required to run the anlysis code are included in the `env.yaml`. To create an environment from the env.yml with the default name `rad`:
+The packages required to run the analysis code are included in the `env.yaml`. To create an environment from the env.yml with the default name `rad`:
 `conda env create -f env.yaml`
 
 You can specify the environment name using:
