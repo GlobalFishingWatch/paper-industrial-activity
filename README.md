@@ -15,8 +15,8 @@ Watch](https://globalfishingwatch.org) et al. (2023, Nature)**.
 
 All the data generated and used by these scripts can be downloaded from
 
-- <https://doi.org/10.6084/m9.figshare.24309475> (analysis and figures)  
-- <https://doi.org/10.6084/m9.figshare.24309469> (training and evaluation)
+<https://doi.org/10.6084/m9.figshare.24309475> (analysis and figures)  
+<https://doi.org/10.6084/m9.figshare.24309469> (training and evaluation)
 
 ## License
 
