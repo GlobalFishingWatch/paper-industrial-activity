@@ -14,11 +14,6 @@
 #     name: python3
 # ---
 
-# %% [markdown]
-# DATA:
-# - raster_5th_degree_v20230218.csv.zip
-# - vessels_bycontinent_v20230217.csv
-
 # %%
 import numpy as np
 import pandas as pd
@@ -27,6 +22,7 @@ import pyseas.contrib as psc
 import pyseas.maps as psm
 import proplot as pplt
 import skimage
+import shapely
 import cartopy
 import cartopy.crs as ccrs
 import matplotlib as mpl
@@ -48,16 +44,26 @@ eliminated_locations = eliminate_ice_string()
 
 
 # %%
-# guppy
+FONT = 8
+
 palette7 = [
-    "#F77539",
-    "#DE0026",
-    "#44005F",
-    "#2954E1",
-    "#24BDB2",
+    "#ca0020",
+    "#f4a582",
+    "#92c5de",
+    "#0571b0",
+    # brighter
+    # "#d7191c",
+    # "#fdae61",
+    # "#abd9e9",
+    # "#2c7bb6",
 ]
 
-mycmap7 = get_continuous_cmap(palette7)
+# red = "#ca0020"
+# blue = "#0571b0"
+red = "#d7191c"
+blue = "#2c7bb6"
+
+mycmap7 = get_continuous_cmap(palette7, n=4)
 
 
 # %% [markdown]
@@ -79,11 +85,8 @@ def map_bivariate(
     ax=None,
 ):
 
+    # cmap = psm.cm.bivariate.orange_blur.reversed()
     cmap_bi = psm.cm.bivariate.TransparencyBivariateColormap(cmap)
-    # ax = psm.create_map(ax)
-    # psm.add_land(ax)
-    # psm.add_eezs()
-    # psm.add_eezs(ax, edgecolor=eez_color, linewidth=eez_linewidth)
     norm1 = mpcolors.Normalize(vmin=0.0, vmax=vmax, clip=True)
     norm2 = mpcolors.LogNorm(vmin=a_vmin, vmax=a_vmax, clip=True)
 
@@ -95,50 +98,39 @@ def map_bivariate(
         cmap_hacked = psm.cm.bivariate.TransparencyBivariateColormap(
             cmap.reversed(),
             transmap=lambda x: 1
-            # psm.cm.bivariate.orange_blue, transmap=lambda x: 1
         )
         cax = psm.add_bivariate_colorbox(
             cmap_hacked,
             norm1,
             norm2,
-            xlabel="Fraction of vessels matched to AIS per $km^2$",
+            # xlabel="Fraction of vessels publicly tracked per $km^2$",
+            xlabel="",
             ylabel="",
             xformat="{x:.0%}",
-            #  yformat="{x:.2f}",
-            aspect_ratio=55,  # lower = thicker
-            width=0.42,
-            loc=(0.36, 0.04),
-            fontsize=18,
+            aspect_ratio=50,  # lower = thicker
+            width=0.45,
+            loc=(0.36, -0.02),
+            # fontsize=20,
+            fontsize=FONT,
             ax=ax,
         )
         cax.minorticks_off()
         cax.get_yaxis().set_visible(False)
         [spine.set_visible(False) for key, spine in cax.spines.items()]
         cax.set_xticks([0, 0.25, 0.5, 0.75, 1])
-        cax.tick_params(labelsize=14)
+        cax.tick_params(labelsize=FONT)
 
         cax.text(
             0.5,
             0.5,
-            # "Add map description here",
-            "",
+            "Fraction of vessels publicly tracked per $km^2$",  # cbar top
             ha="center",
             va="bottom",
             rotation=0,
-            fontsize=14,
-            color="0.6",
+            # fontsize=20,
+            fontsize=FONT,
+            color="0.1",
         )
-
-    # elif cbar:
-    #     psm.add_top_labeled_colorbar(
-    #     img,
-    #     left_label=r"$\longleftarrow$ less matched",
-    #     # center_label=r"AIS$\leftrightarrow$registries",
-    #     center_label=r"",
-    #     right_label=r"more matched $\longrightarrow$",
-    # )
-
-    # ax.set_title(title, x=0.8, y=0.962, pad=-14, ha="right", fontsize=16, color="0.0")
 
     ax.axis("off")
 
@@ -149,8 +141,10 @@ scale = 5
 # %%
 # Load fishing data
 # df = pd.read_csv('../data/raster_10th_degree_v20230217.csv.zip')
-df = pd.read_csv('../data/raster_5th_degree_v20230218.csv.zip')
-df_bars = pd.read_csv('../data/vessels_bycontinent_v20230217.csv')
+# df = pd.read_csv('../data/raster_5th_degree_v20230218.csv.zip')
+# df_bars = pd.read_csv('../data/vessels_bycontinent_v20230217.csv')
+df = pd.read_feather('../data/raster_5th_degree.feather')
+df_bars = pd.read_csv('../data/vessels_bycontinent_v20230803.csv')
 
 # %%
 df.head()
@@ -179,16 +173,6 @@ df_bars = df_bars.rename(str.lower, axis='columns')
 df_bars
 
 # %%
-# df['country'] = df.eez_iso3.apply(get_country)
-# df['continent'] = df.eez_iso3.apply(get_continent)
-# df["AIS fishing"] = df.matched_fishing + df.matched_unknown_likelyfish
-# df["AIS non-fishing"] = (df.matched_nonfishing + df.matched_unknown_likelynonfish)
-# df["dark fishing"] = df.unmatched_fishing_prob
-# df["dark non-fishing"] = df.unmatched_nonfishing_prob
-# df["dark fishing t"] = df.unmatched_fishing_t
-# df["dark non-fishing t"] = df.unmatched_nonfishing_t
-# df["tot_fishing"] = df["dark fishing"] + df["AIS fishing"]
-
 df["tot_fishing"] = df["dark_fishing"] + df["ais_fishing"]
 df["tot_nonfishing"] = df["dark_nonfishing"] + df["ais_nonfishing"]
 
@@ -250,7 +234,8 @@ def add_labels(ind, x, labels, ax, color='0.5'):
             ha="right",
             va="center",
             rotation=0,
-            fontsize=16,
+            # fontsize=18,
+            fontsize=FONT,
             color=color,
         )
 
@@ -264,7 +249,8 @@ def add_numbers(ind, size, labels, ax, pad=120, color="0.5"):
             ha="left",
             va="center",
             rotation=0,
-            fontsize=16,
+            # fontsize=18,
+            fontsize=FONT,
             color=color,
         )
 
@@ -277,8 +263,9 @@ def add_description(text, ax):
         ha="left",
         va="center",
         rotation=0,
-        fontsize=16,
-        color="0.0",
+        # fontsize=18,
+        fontsize=FONT,
+        color="0.1",
     )
 
     
@@ -299,16 +286,16 @@ def add_chart(
     iax = fig.add_axes([left, bottom, width, height])
 
     labels = np.array(labels)
-    colors = ["#218AB2", "#F05A2B"]  # turquose3
+    colors = [blue, red]
 
     ind = np.array([0, 0.5, 1, 1.5, 2, 2.5])
 
     tot = a + b
-    i_sort = np.argsort(tot)
-    labels = labels[i_sort]
-    tot = tot[i_sort]
-    a = a[i_sort]
-    b = b[i_sort]
+    # i_sort = np.argsort(tot)
+    # labels = labels[i_sort]
+    # tot = tot[i_sort]
+    # a = a[i_sort]
+    # b = b[i_sort]
     perc = 100 * a/tot
 
     iax.barh(
@@ -341,53 +328,119 @@ def add_title(title, ax):
         title,
         ha="right",
         va="center",
-        fontsize=20,
-        color="0.0",
+        # fontsize=20,
+        fontsize=FONT,
+        color="0.1",
         transform=ax.transAxes,
     )
 
 
 def add_legend(ax):
-    orange = "#F05A2B"
-    blue = "#218AB2"
     ax.text(
         0.90,
-        0.60,
+        0.73,
         "2017-2021",
         ha="right",
         va="center",
         rotation=0,
-        fontsize=17,
+        # fontsize=18,
+        fontsize=FONT,
         color='0.5',
     )
     ax.text(
         0.90,
-        0.50,
-        "Dark vessels",
+        0.61,
+        "Not publicly tracked",
         ha="right",
         va="center",
         rotation=0,
-        fontsize=17,
-        color=orange,
+        # fontsize=18,
+        fontsize=FONT,
+        color=red,
     )
     ax.text(
         0.90,
-        0.40,
+        0.49,
         "Publicly tracked",
         ha="right",
         va="center",
         rotation=0,
-        fontsize=17,
+        # fontsize=18,
+        fontsize=FONT,
         color=blue,
     )
+    
+    
+def add_percents(percents, ax, k=2):
+    for i, (x,y,z) in enumerate(percents):
+        ax.text(
+            x,
+            y,
+            f'{z}%',
+            ha="center",
+            va="center",
+            rotation=0,
+            # fontsize=20,
+            fontsize=FONT,
+            color=blue,
+            # transform=ax.transAxes,
+        )
+        if i == k:
+            ax.text(
+                x,
+                y,
+                '\n\n\n\npublicly\ntracked',
+                ha="center",
+                va="center",
+                rotation=0,
+                # fontsize=18,
+                fontsize=FONT,
+                color=blue,
+                # transform=ax.transAxes,
+            )
+            
+
+def get_geometry(fcsv):
+    # saved from the notebook CreateStudyArea.ipynb
+    df_shapes = pd.read_csv(fcsv)
+    # it ended up saving as a wkt... need to turn it back into geometries
+    df_shapes["study_area"] = df_shapes.study_area.apply(
+        lambda x: shapely.wkt.loads(x)
+    )
+    df_shapes["study_area_02"] = df_shapes.study_area_02.apply(
+        lambda x: shapely.wkt.loads(x)
+    )
+    df_shapes["study_area_05"] = df_shapes.study_area_05.apply(
+        lambda x: shapely.wkt.loads(x)
+    )
+    return df_shapes
+
+
+def add_geometry(df_shapes, ax, linewidth=0.1, edgecolor='0.6'):
+    ax.add_geometries(
+        df_shapes.study_area_05,
+        crs=psm.identity,
+        facecolor="None",
+        edgecolor=edgecolor,
+        linewidth=linewidth,
+    )
+
+            
+def mouse_event(event):
+    print('{}, {}'.format(round(event.xdata, 0), round(event.ydata, 0)))
 
 
 # %%
+# # %matplotlib qt
+
 SAVE = True
 
 plt.rcParams["figure.autolayout"] = True
 
-fig = plt.figure(figsize=(15, 6 * 3), constrained_layout=False)
+scl = 0.466666667
+
+fig = plt.figure(figsize=(7, 6 * 3 * scl), constrained_layout=False)
+cid = fig.canvas.mpl_connect('button_press_event', mouse_event)
 
 grid = GridSpec(5, 1)
 sub1 = grid[0:2, 0]
@@ -395,7 +448,8 @@ sub2 = grid[2:4, 0]
 sub3 = grid[4, 0]
 
 prj = cartopy.crs.Robinson(central_longitude=0, globe=None)
-extent = (-145, 175, -62, 90)
+# extent = (-145, 175, -62, 90)
+extent = (-132, 172, -62, 90)
 
 with psm.context(psm.styles.light):
 
@@ -419,9 +473,23 @@ with psm.context(psm.styles.light):
         psm=psm,
         cbar=True,
     )
-
-    add_title("Industrial Fishing", ax1)
-
+    
+    percents = [
+        (8265583, 4003494, 22),  # Asia
+        (2759558, 5863734, 61),  # Europe
+        (-8743407, 5421615, 17),  # N America
+        (1997329, 1289603, 22),  # Africa
+        (-5321280, -1387109, 23), # S America
+        (12365359, -2674643, 25),  # Australia
+    ]
+    add_percents(percents, ax1)
+    
+    add_geometry(get_geometry('../data/study_area.csv.zip'), ax1)
+    
+    add_title("Industrial Fishing Vessels", ax1)
+    
+    ax1.text(.01, .98, 'a', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax1.transAxes)
+    
     # ===== Non-fishing ===== #
 
     ax2 = psm.create_map(subplot=sub2, projection=prj)
@@ -442,22 +510,32 @@ with psm.context(psm.styles.light):
         psm=psm,
         cbar=False,
     )
+    
+    percents = [
+        (8265583, 4003494, 69),  # Asia
+        (2759558, 5863734, 93),  # Europe
+        (-8743407, 5421615, 81),  # N America
+        (1997329, 1289603, 85),  # Africa
+        (-5321280, -1387109, 82), # S America
+        (12365359, -2674643, 83),  # Australia
+    ]
+    add_percents(percents, ax2)
 
-    add_title("Transport and Energy", ax2)
+    add_geometry(get_geometry('../data/study_area.csv.zip'), ax2)
+    
+    add_title("Transport and Energy Vessels", ax2)
+    
+    ax2.text(.01, .98, 'b', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax2.transAxes)
 
     # ===== Bar charts ===== #
     
-    df_bars['continents'] = [
-        'Asia',
-        'Europe',
-        'N America',
-        'Africa',
-        'S America',
-        'Australia'
-     ]
+    df_bars = df_bars.replace(to_replace={
+        'North America': 'N America',
+        'South America': 'S America',
+    })
     
-    df_fish = df_bars.sort_values(by=['tot_fishing'], ascending=False)
-    df_nonf = df_bars.sort_values(by=['tot_nonfishing'], ascending=False)
+    df_fish = df_bars.sort_values(by=['tot_fishing'], ascending=True)
+    df_nonf = df_bars.sort_values(by=['tot_nonfishing'], ascending=True)
     
     a = df_fish.dark_fishing
     b = df_fish.ais_fishing
@@ -467,17 +545,36 @@ with psm.context(psm.styles.light):
     ax3 = fig.add_subplot(sub3)
     ax3.axis("off")
 
-    left, bottom, width, height = [0.17, 0.07, 0.28, 0.11]
+    left, bottom, width, height = [0.17, 0.07, 0.28, 0.12]
     title = "Industrial Fishing (num. vessels)"
-    add_chart(left, bottom, width, height, fig, a, b, -600, 650, title, df_fish.continents)
+    add_chart(left, bottom, width, height, fig, a, b, -600, 650, title, df_fish.continent)
 
-    left, bottom, width, height = [0.58, 0.07, 0.28, 0.11]
+    left, bottom, width, height = [0.58, 0.07, 0.28, 0.12]
     title = "Transport and Energy (num. vessels)"
-    add_chart(left, bottom, width, height, fig, c, d, -600, 650, title, df_nonf.continents)
+    add_chart(left, bottom, width, height, fig, c, d, -600, 650, title, df_nonf.continent)
 
     add_legend(ax3)
+    
+    ax3.text(0.09, 1.3, 'c', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax3.transAxes)
+    
+    # ===== Percentages ===== #
+    
+    print(df_fish.continent[::-1])
+    
+    print('Dark Fishing')
+    print(100 - (100 * b / (a + b)).round(0)[::-1])
+    
+    print('Dark NonFishing')
+    print(100 - (100 * d / (c + d)).round(0)[::-1])
+    
+    print(df_fish.tot_fishing[::-1] / df_fish.tot_fishing.sum())
 
 if SAVE:
-    plt.savefig("figures/fig1v4_5th.png", bbox_inches="tight", pad_inches=0, dpi=300)
+    plt.savefig(
+        "figures/fishing_nonfishing_global_maps_v3.jpg",
+        bbox_inches="tight",
+        pad_inches=0,
+        dpi=300
+    )
 
 # %%

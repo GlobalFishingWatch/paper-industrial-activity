@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.13.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -86,12 +86,19 @@ df_dist3.head()
 
 # %%
 SAVE = True
+FONT = 8
+
+scl = 0.583333333
+
 plt.rcParams["figure.facecolor"] = "white"
 plt.rcParams.update({'figure.autolayout': True})
-plt.rcParams.update({'font.size': 14})
+plt.rcParams.update({'font.size': FONT})
 
-fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+fig, axs = plt.subplots(1, 2, figsize=(12 * scl, 6 * scl))
 ax3, ax4 = axs
+
+# REVERSE PLOTS
+ax4, ax3 = ax3, ax4
 
 with psm.context(psm.styles.light):
 
@@ -112,15 +119,15 @@ with psm.context(psm.styles.light):
     label3 = 'Oil infrastructure'
     label4 = 'Wind infrastructure'
     
-    ax3.plot(x_vessel, y_nonf, color=color2, linewidth=2.25, linestyle='-', label=label1)
-    ax3.plot(x_vessel, y_fish, color=color2, linewidth=2.5, linestyle='--', label=label2)
-    ax3.plot(x_infra, y_oil, color=color3, linewidth=2.25, linestyle='-', label=label3)
-    ax3.plot(x_infra, y_wind, color=color3, linewidth=2.5, linestyle='--', label=label4)
+    ax3.plot(x_vessel, y_nonf, color=darker_blue, linewidth=2.25 * scl, linestyle='-', label=label1)
+    ax3.plot(x_vessel, y_fish, color=darker_blue, linewidth=2.5 * scl, linestyle='--', label=label2)
+    ax3.plot(x_infra, y_oil, color=inter_green, linewidth=2.25 * scl, linestyle='-', label=label3)
+    ax3.plot(x_infra, y_wind, color=inter_green, linewidth=2.5 * scl, linestyle='--', label=label4)
     
     ax3.set_xlim(0, 60)
     ax3.set_xlabel("Distance from shore, km")
     ax3.set_ylabel("Average number of vessels or structures per day")
-    ax3.legend(frameon=False, fontsize=13, loc='center right')
+    ax3.legend(frameon=False, fontsize=FONT, loc='center right')
         
     ### Distance from infrastructure ###
     
@@ -138,15 +145,15 @@ with psm.context(psm.styles.light):
     
         if label == 'oil':
             style = '-'
-            width = 2.5
-            label = 'from Oil'
+            width = 2.5 * scl
+            label = 'From oil'
         elif label == 'wind':
             style = '--'
-            width = 1.5
-            label = 'from Wind'
+            width = 1.5 * scl
+            label = 'From wind'
         
         label1 = label + ' (trawlers)'
-        label2 = label + ' (others)'
+        label2 = label + ' (other)'
             
         ax4.plot(x1, y1, color=darker_blue, linewidth=width, linestyle=style, label=label1)
         ax4.plot(x2, y2, color=inter_green, linewidth=width, linestyle=style, label=label2)        
@@ -154,7 +161,7 @@ with psm.context(psm.styles.light):
         ax4.set_xlim(0, 6)
         ax4.set_xlabel("Distance from infrastructure, km")
         ax4.set_ylabel("Normalized relative amount of activity")
-        ax4.legend(frameon=False, fontsize=13, loc='lower right')
+        ax4.legend(frameon=False, fontsize=FONT, loc='lower right')
         
     for ax in [ax3, ax4]:
         # Hide the right and top spines
@@ -163,8 +170,17 @@ with psm.context(psm.styles.light):
         ax.minorticks_off()
         # ax.grid(axis="y")
         ax.grid(False)
+        
+    # REVERSED SUBPLOTS
+    ax4.text(-0.18, 1.03, 'a', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax4.transAxes)        
+    ax3.text(-0.18, 1.03, 'b', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax3.transAxes)        
 
 if SAVE:
-    plt.savefig("figures/distinfra.png", bbox_inches="tight", pad_inches=0, dpi=300)
+    plt.savefig(
+        "figures/distance_from_shore_infra.jpg",
+        bbox_inches="tight",
+        pad_inches=0,
+        dpi=300
+    )
 
 # %%

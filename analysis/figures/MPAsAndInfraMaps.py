@@ -51,29 +51,6 @@ READZIP = False
 # ## Map global fishing activity
 
 # %%
-q = """
-select 
-  detect_lat,
-  detect_lon,
-  detect_id,
-  length_m,
-  score>1e-2 as is_matched_to_ais
-from
-  proj_global_sar.detections_w_overpasses_v20220805
-where
-  -- the following is very restrictive on repeated objects
-  repeats_100m_180days_forward < 3 and
-  repeats_100m_180days_back < 3 and
-  repeats_100m_180days_center < 3
-  -- get rid of scenes where more than half the detections
-  -- are likely noise
-  and (scene_detections <=5 or scene_quality > .5)
-  and presence > .7
-  and extract(date from detect_timestamp) 
-     between "2017-01-01" and "2021-12-31"
-"""
-
-# %%
 # NOTE: Read in GIANT csv of all detections,
 # created by DownloadAllDetections.ipynb
 # this is a huge file... >1.5gb
@@ -81,7 +58,8 @@ where
 # we will filter its size down below.
 
 if READZIP:
-    df = pd.read_csv("../data/all_detections.csv.zip")
+    # df = pd.read_csv("../data/all_detections.csv.zip")
+    df = pd.read_feather("../data/all_detections_v20230922.feather")
     df.matched_category.unique()
     df.head()
 
@@ -121,7 +99,7 @@ if READZIP:
     # because we can't assign fishing or non-fishing to them.
     df = df[~df.category_rand.isna()]
     df = df.reset_index(drop=True)
-    df.to_feather('../data/all_detections_matched_rand.feather')
+    # df.to_feather('../data/all_detections_matched_rand.feather')
 else:
     df = pd.read_feather('../data/all_detections_matched_rand.feather', use_threads=True)
     # Read previously processed data
@@ -161,7 +139,18 @@ def scatter(x, y, c='r', s=1, ax=None, z=10):
     return ax
 
 
+def mouse_event(event):
+    print(f"{event.xdata:.0f}, {event.ydata:.0f}")
+
+
 # %%
+# %matplotlib qt
+
+SAVE = True
+FONT = 10
+
+scl = 0.933333333
+
 # MPAs centroids
 df_mpa = pd.read_csv('../data/no_take_mpas_dark_detections_top15.csv')
 df_mpa = pd.concat([df_mpa, pd.read_csv('../data/galapagos_mpa_boundaries.csv')])
@@ -174,14 +163,14 @@ g_reef = geoms[3:6]
 g_galap = geoms[-4:]
 
 B = [
-    (-90.973796,-0.223786, 5, 3, g_galap),  # Galapagos
-    (152.614276,-23.021161, 4, 1.25, g_reef),  # Great Barrier 
+    (-90.973796,-0.223786, 5, 2.5 * scl, g_galap),  # Galapagos
+    (152.614276,-23.021161, 4, 1.25 * scl, g_reef),  # Great Barrier 
     
     # (-90.563077,28.869256, 4, 2.5, None),  # Gulf of Mexico
-    (-71.451844, 9.935328, 0.75, 1, None),  # Lake Maracaibo (infra)
+    (-71.451844, 9.935328, 0.75, 1 * scl, None),  # Lake Maracaibo (infra)
     
     # (2.047170,51.852910, 1.25, 1, None),  # English Channel
-    (121.401974,33.070388, 1.3, 1.25, None),  # Shanghai
+    (121.401974,33.070388, 1.3, 1.25 * scl, None),  # Shanghai
     
     
     # (7.017328,54.577921, 2.2, 1.25, None),  # Denmark
@@ -197,11 +186,13 @@ B = [
     # (-91.063077,28.869256, 5.25, 0.25),  # Gulf of Mexico (vessels)
 ]
 
-SAVE = False
-matchcolor = "#07A9FD"
-darkcolor = "#FD7F0C" 
-oilcolor = "teal" 
-windcolor = "mediumvioletred" 
+letter = {1: 'a', 2: 'b', 3: 'c', 4: 'd'}
+                    
+
+darkcolor = "#d7191c"
+matchcolor = "#2c7bb6"
+oilcolor = "#7570b3"
+windcolor = "#d95f02"
 landcolor = '0.85'
 darkfirst = False
 alpha = 1
@@ -215,11 +206,12 @@ proj_info = [
 rows, cols, _ = np.shape(proj_info)
 
 plt.rcdefaults()  # <-- important
-fig = plt.figure(figsize=(3.75 * cols, 3.15 * rows * 1.1), constrained_layout=True)
+fig = plt.figure(figsize=(3.75 * cols * scl, 3.15 * rows * 1.1 * scl), constrained_layout=True)
+cid = fig.canvas.mpl_connect('button_press_event', mouse_event)
 fig.patch.set_facecolor('white')
 subplot = 0
 
-with psm.context(psm.styles.dark):
+with psm.context(psm.styles.light):
     with psm.context({"text.color": "k"}):
         
         for i in range(rows):
@@ -270,12 +262,12 @@ with psm.context(psm.styles.dark):
                 
                 psm.add_countries(ax)
                 psm.add_eezs(ax)
-                # psm.add_land(
-                #     ax=ax,
-                #     edgecolor='darkgray',
-                #     facecolor=landcolor,
-                #     linewidth=0.5,
-                # )
+                psm.add_land(
+                    ax=ax,
+                    edgecolor='darkgray',
+                    facecolor=landcolor,
+                    linewidth=0.5,
+                )
                 
                 if geoms:
                     ##### MultiPolygon -> list of polygons
@@ -402,7 +394,22 @@ with psm.context(psm.styles.dark):
                             fontsize=10,
                             transform=ax.transAxes,
                         )
+                        
+                if subplot == 1:
+                    x, y, s = (39876, -251822, "GALAPAGOS ISLANDS")
+                    ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                if subplot == 2:
+                    x, y, s = (-151657, -170945, "NORTHEAST\nAUSTRALIA")
+                    ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                if subplot == 3:
+                    x, y, s = (969048, 1135649, "LAKE\nMARACAIBO")
+                    ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                if subplot == 4:
+                    x, y, s = (-60395, -57985, "EAST\nCHINA")
+                    ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
                     
+                s = letter[subplot]
+                ax.text(.015, .99, s, fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax.transAxes)
             '''
                 if subplot == 1:
                     break
@@ -410,6 +417,11 @@ with psm.context(psm.styles.dark):
             '''
 
 if SAVE:
-    plt.savefig("figures/mpainfra.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
+    plt.savefig(
+        "figures/mpa_infra_maps_v3.jpg",
+        bbox_inches="tight",
+        pad_inches=0.01,
+        dpi=300
+    )
 
 # %%

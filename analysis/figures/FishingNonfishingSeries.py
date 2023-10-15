@@ -13,9 +13,6 @@
 #     name: python3
 # ---
 
-# ## Time series of fishing and non-fishing only
-# ### V8 (using rematched and interpolated data)
-
 # +
 import datetime
 import warnings
@@ -81,7 +78,7 @@ def get_country(x):
 # -
 
 # NOTE: feather can store date objects, CSV dates need to be parsed (str -> date)
-f = "../data/24day_rolling_augmented_v20230220.csv.zip"
+f = "../data/24day_rolling_augmented_v20230816.csv.zip"
 df1 = pd.read_csv(f, parse_dates=["rolling_date"])
 
 # Crop beguining and end data points
@@ -173,64 +170,109 @@ for d in [dfW, dfC, dfA]:
     for calc_key in calc_keys:
         d = get_annual_means(d, calc_key)
         d = get_trend_and_cycle(d, calc_key)
+# -
+
+# Save time series data for uncertainty estimation 
+# See BootstrapUncertaintySeries.py
+if 0:
+    cols = ['fishing', 'nonfishing']
+    dfW[cols].to_csv('ts_world.csv', index=True)
+    dfC[cols].to_csv('ts_china.csv', index=True)
+    dfA[cols].to_csv('ts_global.csv', index=True)
 
 # +
 # Calculate statistics
 
 # Use same year_interval for all
 pre = (dfW.year_interval == "2018") | (dfW.year_interval == "2019")
-post = (dfW.year_interval == "2020") | (dfW.year_interval == "2021")
+pos = (dfW.year_interval == "2020") | (dfW.year_interval == "2021")
 dt = (dfW.date_year.values[-1] - dfW.date_year.values[0])  
+
+n_pre = fishW_pre = len(dfW.fishing[pre])
+n_pos = fishW_pos = len(dfW.fishing[pos])
 
 # Outside China
 fishW_pre = dfW.fishing[pre].mean()
-fishW_post = dfW.fishing[post].mean()
+fishW_pos = dfW.fishing[pos].mean()
+fishW_pre_sd = dfW.fishing[pre].std()
+fishW_pos_sd = dfW.fishing[pos].std()
 fishW_mean = dfW.fishing.mean()
 fishW_trend = (dfW.fishing_trend.values[-1] - dfW.fishing_trend.values[0]) / dt
 
 # Inside China
 fishC_pre = dfC.fishing[pre].mean()
-fishC_post = dfC.fishing[post].mean()
+fishC_pos = dfC.fishing[pos].mean()
+fishC_pre_sd = dfC.fishing[pre].std()
+fishC_pos_sd = dfC.fishing[pos].std()
 fishC_mean = dfC.fishing.mean()
 fishC_trend = (dfC.fishing_trend.values[-1] - dfC.fishing_trend.values[0]) / dt
 
 # All
 fishA_pre = dfA.fishing[pre].mean()
-fishA_post = dfA.fishing[post].mean()
+fishA_pos = dfA.fishing[pos].mean()
+fishA_pre_sd = dfA.fishing[pre].std()
+fishA_pos_sd = dfA.fishing[pos].std()
 fishA_mean = dfA.fishing.mean()
 fishA_trend = (dfA.fishing_trend.values[-1] - dfA.fishing_trend.values[0]) / dt
 
 # Outside China
 nonfW_pre = dfW.nonfishing[pre].mean()
-nonfW_post = dfW.nonfishing[post].mean()
+nonfW_pos = dfW.nonfishing[pos].mean()
+nonfW_pre_sd = dfW.nonfishing[pre].std()
+nonfW_pos_sd = dfW.nonfishing[pos].std()
 nonfW_mean = dfW.nonfishing.mean()
 nonfW_trend = (dfW.nonfishing_trend.values[-1] - dfW.nonfishing_trend.values[0]) / dt
 
-# Inside Chian
+# Inside China
 nonfC_pre = dfC.nonfishing[pre].mean()
-nonfC_post = dfC.nonfishing[post].mean()
+nonfC_pos = dfC.nonfishing[pos].mean()
+nonfC_pre_sd = dfC.nonfishing[pre].std()
+nonfC_pos_sd = dfC.nonfishing[pos].std()
 nonfC_mean = dfC.nonfishing.mean()
 nonfC_trend = (dfC.nonfishing_trend.values[-1] - dfC.nonfishing_trend.values[0]) / dt
 
 # All
 nonfA_pre = dfA.nonfishing[pre].mean()
-nonfA_post = dfA.nonfishing[post].mean()
+nonfA_pos = dfA.nonfishing[pos].mean()
+nonfA_pre_sd = dfA.nonfishing[pre].std()
+nonfA_pos_sd = dfA.nonfishing[pos].std()
 nonfA_mean = dfA.nonfishing.mean()
 nonfA_trend = (dfA.nonfishing_trend.values[-1] - dfA.nonfishing_trend.values[0]) / dt
 
-fishW_change1 = 100 * (fishW_post - fishW_pre) / np.abs(fishW_pre)
-fishC_change1 = 100 * (fishC_post - fishC_pre) / np.abs(fishC_pre)
-fishA_change1 = 100 * (fishA_post - fishA_pre) / np.abs(fishA_pre)
-fishW_change2 = 100 * (fishW_post - fishW_mean) / np.abs(fishW_mean)
-fishC_change2 = 100 * (fishC_post - fishC_mean) / np.abs(fishC_mean)
-fishA_change2 = 100 * (fishA_post - fishA_mean) / np.abs(fishA_mean)
+fishW_change1 = 100 * (fishW_pos - fishW_pre) / np.abs(fishW_pre)
+fishC_change1 = 100 * (fishC_pos - fishC_pre) / np.abs(fishC_pre)
+fishA_change1 = 100 * (fishA_pos - fishA_pre) / np.abs(fishA_pre)
 
-nonfW_change1 = 100 * (nonfW_post - nonfW_pre) / np.abs(nonfW_pre)
-nonfC_change1 = 100 * (nonfC_post - nonfC_pre) / np.abs(nonfC_pre)
-nonfA_change1 = 100 * (nonfA_post - nonfA_pre) / np.abs(nonfA_pre)
-nonfW_change2 = 100 * (nonfW_post - nonfW_mean) / np.abs(nonfW_mean)
-nonfC_change2 = 100 * (nonfC_post - nonfC_mean) / np.abs(nonfC_mean)
-nonfA_change2 = 100 * (nonfA_post - nonfA_mean) / np.abs(nonfA_mean)
+fishW_change2 = 100 * (fishW_pos - fishW_mean) / np.abs(fishW_mean)
+fishC_change2 = 100 * (fishC_pos - fishC_mean) / np.abs(fishC_mean)
+fishA_change2 = 100 * (fishA_pos - fishA_mean) / np.abs(fishA_mean)
+
+nonfW_change1 = 100 * (nonfW_pos - nonfW_pre) / np.abs(nonfW_pre)
+nonfC_change1 = 100 * (nonfC_pos - nonfC_pre) / np.abs(nonfC_pre)
+nonfA_change1 = 100 * (nonfA_pos - nonfA_pre) / np.abs(nonfA_pre)
+
+nonfW_change1_sd = 100 * np.sqrt(nonfW_pos_sd**2 + nonfW_pre_sd**2)
+nonfC_change1_sd = 100 * np.sqrt(nonfC_pos_sd**2 + nonfC_pre_sd**2)
+nonfA_change1_sd = 100 * np.sqrt(nonfA_pos_sd**2 + nonfA_pre_sd**2)
+
+nonfW_change2 = 100 * (nonfW_pos - nonfW_mean) / np.abs(nonfW_mean)
+nonfC_change2 = 100 * (nonfC_pos - nonfC_mean) / np.abs(nonfC_mean)
+nonfA_change2 = 100 * (nonfA_pos - nonfA_mean) / np.abs(nonfA_mean)
+
+# ----- pre and post 2000 values ----- #
+print("N pre and pos:", n_pre, n_pos)
+print()
+
+print("Fishing:  M_pre  SD_pre  M_pos  SD_pos")
+print(f"World:   {fishW_pre:.1f}  {fishW_pre_sd:.1f}  {fishW_pos:.1f}  {fishW_pos_sd:.1f}")
+print(f"China:   {fishC_pre:.1f}  {fishC_pre_sd:.1f}  {fishC_pos:.1f}  {fishC_pos_sd:.1f}")
+print(f"Outside: {fishA_pre:.1f}  {fishA_pre_sd:.1f}  {fishA_pos:.1f}  {fishA_pos_sd:.1f}")
+print()
+print("Non-fishing: M_pre  SD_pre  M_pos  SD_pos")
+print(f"World:   {nonfW_pre:.1f}  {nonfW_pre_sd:.1f}  {nonfW_pos:.1f}  {nonfW_pos_sd:.1f}")
+print(f"China:   {nonfC_pre:.1f}  {nonfC_pre_sd:.1f}  {nonfC_pos:.1f}  {nonfC_pos_sd:.1f}")
+print(f"Outside: {nonfA_pre:.1f}  {nonfA_pre_sd:.1f}  {nonfA_pos:.1f}  {nonfA_pos_sd:.1f}")
+print()
 
 print("Change due to COVID-19:\n")
 print(f"{'':<18}2018-2019 vs 2020-2021 | 2017-2021 vs 2020-2021\n")
@@ -245,7 +287,7 @@ print(f"ALL activity non-fishing change: {'':>2}{nonfA_change1:+.1f}% | {nonfA_c
 
 print("\nTrends (2017-2021):\n")
 
-print(f"Outside China fishing trend:{'':>6}{fishW_trend:+.0f} units?")
+print(f"Outside China fishing trend:{'':>6}{fishW_trend:+.0f}")
 print(f"Inside China fishing trend: {'':>6}{fishC_trend:+.0f}")
 
 print(f"Outside China non-fishing trend:{'':>2}{nonfW_trend:+.0f}")
@@ -253,6 +295,8 @@ print(f"Inside China non-fishing trend: {'':>2}{nonfC_trend:+.0f}")
 
 # +
 SAVE = False
+FONT = 10
+
 plt.rcParams["figure.facecolor"] = "white"
 plt.rcParams.update({"figure.autolayout": True})
 
@@ -303,12 +347,10 @@ color_nonf = "tab:blue"
 
 text_loc = (0.02, 0.9)
 
-# Stats are calculated below
-# # copy and paste numbers here
-# covid_fish = ["$-14$%", "$-8$%"]
-# covid_nonf = ["$<1$%", "$+5$%"]
-covid_fish = [f"${fishW_change1:+.0f}$%", f"${fishC_change1:+.0f}$%"]
-covid_nonf = [f"${nonfW_change1:+.0f}$%", f"${nonfC_change1:+.0f}$%"]
+# covid_fish = [f"${fishW_change1:+.0f}$%", f"${fishC_change1:+.0f}$%"]
+# covid_nonf = [f"${nonfW_change1:+.0f}$%", f"${nonfC_change1:+.0f}$%"]
+covid_fish = ["$-14 \pm 2$%", "$-8 \pm 3$%"]
+covid_nonf = ["$-1 \pm 1$%", "$+4 \pm 1$%"]
 
 # ----- Fishing ----- #
 
@@ -356,14 +398,6 @@ for ax, d, n, c in zip([ax1a, ax1b], [dfW, dfC], names, covid_fish):
     )
     ax.set_ylim(d.fishing.min(), d.fishing.max())
 
-    # ax.plot(
-    #     d.date_year,
-    #     d.fishing_trend,
-    #     linewidth=1,
-    #     color=color_fish,
-    #     linestyle="--",
-    # )
-
     if "outside" in n.lower():
         
         # Pandemic line
@@ -371,7 +405,7 @@ for ax, d, n, c in zip([ax1a, ax1b], [dfW, dfC], names, covid_fish):
             vmax,
             2020,
             2022,
-            color="0.5",
+            color="0.1",
             linewidth=1.5,
             zorder=10,
             clip_on=True,
@@ -383,8 +417,8 @@ for ax, d, n, c in zip([ax1a, ax1b], [dfW, dfC], names, covid_fish):
             "Pandemic",
             ha="center",
             va="center",
-            color="0.5",
-            fontsize=11,
+            color="0.1",
+            fontsize=FONT,
             zorder=11,
             bbox=dict(facecolor="white", edgecolor="white"),
         )
@@ -396,21 +430,9 @@ for ax, d, n, c in zip([ax1a, ax1b], [dfW, dfC], names, covid_fish):
         ha="left",
         va="center",
         color=".1",
-        fontsize=11,
+        fontsize=FONT,
         transform=ax.transAxes,
     )
-    
-    # Trend percent (right)
-    # ax.text(
-    #     2022.06,
-    #     vlast,
-    #     f"${perc:+.0f}$%",
-    #     ha="left",
-    #     va="center",
-    #     color=color_fish,
-    #     fontsize=11,
-    #     weight="bold",
-    # )
     
     # Mean percent (top of box)
     ax.text(
@@ -419,8 +441,8 @@ for ax, d, n, c in zip([ax1a, ax1b], [dfW, dfC], names, covid_fish):
         c,
         ha="left",
         va="bottom",
-        color="0.4",
-        fontsize=11,
+        color="0.1",
+        fontsize=FONT,
         weight="normal",
     )
 
@@ -498,41 +520,24 @@ for ax, d, n, c in zip([ax2a, ax2b], [dfW, dfC], names, covid_nonf):
     )
     ax.set_ylim(d.nonfishing.min(), d.nonfishing.max())
 
-    # ax.plot(
-    #     d.date_year,
-    #     d.nonfishing_trend,
-    #     linewidth=1,
-    #     color=color_nonf,
-    #     linestyle="--",
-    # )
-
     ax.text(
         *text_loc,
         n,
         ha="left",
         va="center",
         color=".1",
-        fontsize=11,
+        fontsize=FONT,
         transform=ax.transAxes,
     )
-    # ax.text(
-    #     2022.06,
-    #     vlast,
-    #     f"${perc:+.0f}$%",
-    #     ha="left",
-    #     va="center",
-    #     color=color_nonf,
-    #     fontsize=11,
-    #     weight="bold",
-    # )
+    
     ax.text(
         2020.08,
         (mean2 + std2) + 100,
         c,
         ha="left",
         va="bottom",
-        color="0.4",
-        fontsize=11,
+        color="0.1",
+        fontsize=FONT,
         weight="normal",
     )
 
@@ -556,28 +561,27 @@ for ax, d, n, c in zip([ax2a, ax2b], [dfW, dfC], names, covid_nonf):
         for ny, mo in zip(nyc, mor):
             ax.hlines(vmin, ny, ny+0.1, color='r', lw=5, alpha=0.5, clip_on=False)
             ax.hlines(vmin, mo, mo+0.275, color='b', lw=5, alpha=0.5, clip_on=False)
-
             
 # ----- Figure legend ----- #
 
 y0 = vmin-1650
 
-x0 = 2017
-x1 = 2018.40
-x2 = 2019.64
-x3 = 2020.96
+x0 = 2017.00
+x1 = 2018.53
+x2 = 2019.93
+x3 = 2021.44
 
 d0 = 0.1
-ax2b.hlines(y0, x0, x0+d0, color='g', lw=9, alpha=0.5, clip_on=False)
-ax2b.hlines(y0, x1, x1+d0, color='r', lw=9, alpha=0.5, clip_on=False)
-ax2b.hlines(y0, x2, x2+d0, color='b', lw=9, alpha=0.5, clip_on=False)
-ax2b.hlines(y0, x3, x3+d0, color='k', lw=9, alpha=0.3, clip_on=False)
+ax2b.hlines(y0, x0, x0+d0, color='g', lw=10, alpha=0.5, clip_on=False)
+ax2b.hlines(y0, x1, x1+d0, color='r', lw=10, alpha=0.5, clip_on=False)
+ax2b.hlines(y0, x2, x2+d0, color='b', lw=10, alpha=0.5, clip_on=False)
+ax2b.hlines(y0, x3, x3+d0, color='k', lw=10, alpha=0.3, clip_on=False)
 
 ss = [
     "Christmas/New Year",
     "Chinese New Year",
     "Chinese Moratorium",
-    "Mean $\pm$ Std",
+    "Mean $\pm$ SD",
 ]
 for x, s in zip([x0, x1, x2, x3], ss):
     ax2b.text(
@@ -587,7 +591,7 @@ for x, s in zip([x0, x1, x2, x3], ss):
         ha="left",
         va="center",
         color='0.2',
-        fontsize=9,
+        fontsize=FONT,
         clip_on=False,
     )
 
@@ -600,7 +604,7 @@ ax1a.text(
     ha="left",
     color=color_fish,
     weight="bold",
-    fontsize=11,
+    fontsize=FONT,
     transform=ax1a.transAxes,
 )
 ax2a.text(
@@ -610,7 +614,7 @@ ax2a.text(
     ha="left",
     color=color_nonf,
     weight="bold",
-    fontsize=11,
+    fontsize=FONT,
     transform=ax2a.transAxes,
 )
 
@@ -621,8 +625,13 @@ fig.text(
     ha="center",
     va="center",
     rotation="vertical",
-    fontsize=11,
+    fontsize=FONT,
 )
+
+
+ax1a.text(-0.08, 1.2, "a", fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax1a.transAxes)
+ax2a.text(-0.08, 1.2, "b", fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax2a.transAxes)
+             
 
 # Hide the right and top spines
 for ax in [ax1a, ax1b, ax2a, ax2b]:
@@ -638,12 +647,19 @@ for ax in [ax1a, ax2a]:
 fig.align_labels()
 
 if SAVE:
-    plt.savefig("figures/fishing_nonfishing_series.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
+    plt.savefig(
+        "figures/fishing_nonfishing_series_v3.jpg",
+        bbox_inches="tight",
+        pad_inches=0.1,
+        dpi=300
+    )
+# -
 
-# +
+"""
 # ALL ACTIVITY
 
 SAVE = False
+
 plt.rcParams["figure.facecolor"] = "white"
 plt.rcParams.update({"figure.autolayout": True})
 
@@ -837,6 +853,8 @@ for ax, d, n, c in zip([ax1a, ax1b], [dfA, dfC], names, covid_fish):
             ax.hlines(vmin, ny, ny+0.1, color='r', lw=5, alpha=0.5, clip_on=False)
             ax.hlines(vmin, mo, mo+0.275, color='b', lw=5, alpha=0.5, clip_on=False)
         
+    if "all" in n.lower():
+        ax.text(.01, .99, "a", fontsize=12, weight='bold', ha='left', va='top', transform=ax.transAxes)
 
 # ----- Non-fishing ----- #
 
@@ -944,13 +962,15 @@ for ax, d, n, c in zip([ax2a, ax2b], [dfA, dfC], names, covid_nonf):
             ax.hlines(vmin, ny, ny+0.1, color='r', lw=5, alpha=0.5, clip_on=False)
             ax.hlines(vmin, mo, mo+0.275, color='b', lw=5, alpha=0.5, clip_on=False)
 
+    if "all" in n.lower():
+        ax.text(.01, .99, "b", fontsize=12, weight='bold', ha='left', va='top', transform=ax.transAxes)
             
 # ----- Figure legend ----- #
 
 y0 = vmin-1650
 
 x0 = 2017
-x1 = 2018.40
+x1 = 2018.50
 x2 = 2019.64
 x3 = 2020.96
 
@@ -974,7 +994,7 @@ for x, s in zip([x0, x1, x2, x3], ss):
         ha="left",
         va="center",
         color='0.2',
-        fontsize=9,
+        fontsize=11,
         clip_on=False,
     )
 
@@ -1025,7 +1045,12 @@ for ax in [ax1a, ax2a]:
 fig.align_labels()
 
 if SAVE:
-    plt.savefig("figures/fishing_nonfishing_series.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
-# -
+    plt.savefig(
+        "figures/fishing_nonfishing_series_v3.png",
+        bbox_inches="tight",
+        pad_inches=0.1,
+        dpi=300
+    )
+"""
 
 

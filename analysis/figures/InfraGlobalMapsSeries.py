@@ -14,29 +14,17 @@
 #     name: python3
 # ---
 
-# %% [markdown]
-# DATA, latest tables:
-#
-#     proj_global_sar.infrastructure_reclassified_v20230222
-#     proj_global_sar.infra_eez_time_series_v20230222
-#     proj_global_sar.infra_global_time_series_v20230222
-#     proj_global_sar.infra_poly_time_series_v20230222
-#     proj_global_sar.infra_vessel_activity_oil_100th_degree_v20230222
-#     roj_global_sar.infra_vessel_activity_oil_10th_degree_v20230222
-#     proj_global_sar.infra_vessel_activity_wind_100th_degree_v20230222
-#     proj_global_sar.infra_vessel_activity_wind_10th_degree_v20230222
-#     proj_global_sar.offshore_infra_w_regions_v20230222
-#     proj_global_sar.offshore_infra_reclassified_w_regions_v20230222
-
 # %%
 # import cartopy
 import matplotlib.pyplot as plt
+import matplotlib.patheffects as pe
 import numpy as np
 import pandas as pd
 import datetime as dt
 import pyseas.maps as psm
 import skimage
 import cartopy
+import statsmodels.api as sm
 from matplotlib.gridspec import GridSpec
 
 # %matplotlib inline
@@ -44,6 +32,20 @@ from matplotlib.gridspec import GridSpec
 # %%
 # Local imports
 from cmaps import *
+
+palette4 = [
+    # "#fc8d59",
+    # "#ef6548",
+    # "#d7301f",
+    # "#b30000",
+    # "#7f0000",
+    #
+"#fd8d3c",
+"#fc4e2a",
+"#e31a1c",
+"#bd0026",
+"#800026",
+]
 
 import pycountry
 from pycountry_convert import (
@@ -83,22 +85,13 @@ def get_country(x):
 
 
 # %%
-# Load table / read data on vessel traffic
-QUERY = False
+# Load data on vessel traffic
 
-tab_oil = 'infra_vessel_activity_oil_100th_degree_v20230222'
-tab_wind = 'infra_vessel_activity_wind_100th_degree_v20230222'
+data_oil = '../data/infra_vessel_activity_oil_100th_degree_v20230222.feather'
+data_wind = '../data/infra_vessel_activity_wind_100th_degree_v20230222.feather'
 
-if QUERY:
-    qo = f"SELECT * FROM proj_global_sar.{tab_oil}"
-    qw = f"SELECT * FROM proj_global_sar.{tab_wind}"
-    df_oil = pd.read_gbq(qo, project_id="project-id")
-    df_wind = pd.read_gbq(qw, project_id="project-id") 
-    df_oil.to_feather(f"../data/{tab_oil}.feather")
-    df_wind.to_feather(f"../data/{tab_wind}.feather")
-else:
-    df_oil = pd.read_feather(f"../data/{tab_oil}.feather", use_threads=True)
-    df_wind = pd.read_feather(f"../data/{tab_wind}.feather", use_threads=True)
+df_oil = pd.read_feather(data_oil, use_threads=True)
+df_wind = pd.read_feather(data_wind, use_threads=True)
 
 df_oil.head()
 
@@ -175,17 +168,11 @@ raster_wind = psm.rasters.df2raster(
 )
 
 # %%
-# Load infrastructure data
-QUERY = False
+# Load data for infrastructure map
 
-tab_infra = "offshore_infra_reclassified_w_regions_v20230222"
+data_infra = "../data/offshore_infra_reclassified_w_regions_v20230816.csv"
 
-if QUERY:
-    q = f"SELECT * FROM proj_global_sar.{tab_infra}  -- single date"
-    df2 = pd.read_gbq(q, project_id="project-id")
-    df2.to_feather(f"../data/{tab_infra}.feather")
-else:
-    df2 = pd.read_feather(f"../data/{tab_infra}.feather", use_threads=True)
+df2 = pd.read_csv(data_infra)
 
 # Add columns for binning
 df2["x_index"] = (df2.lon * 100).astype(int)
@@ -205,7 +192,10 @@ other = df2.loc[df2.label.isin(["unknown", "possible_oil", "possible_wind"])]
 mara = df2.loc[df2.label == "lake_maracaibo"]
 
 # %%
-len(other)
+print('oil:', len(oil))
+print('wind:', len(wind))
+print('other:', len(other))
+print('mara:', len(mara))
 
 # %%
 # Rasterize infrastructure
@@ -319,44 +309,34 @@ print(f"mara:  {len(z_mara)} {z_mara.min():.0f} {z_mara.max():.0f}")
 
 # %%
 # Load infrastructure time series
-QUERY = True
 
-tab_glob = "infra_global_time_series_v20230222"
-tab_eez = "infra_eez_time_series_v20230222"
+data_glob = "../data/infra_global_time_series_v20230816.csv"
+data_eez = "../data/infra_eez_time_series_v20230816.csv"
 
-if QUERY:
-    qg = f"SELECT * FROM proj_global_sar.{tab_glob}"
-    qe = f"SELECT * FROM proj_global_sar.{tab_eez}"
-    df_glob = pd.read_gbq(qg, project_id="project-id")
-    df_eez = pd.read_gbq(qe, project_id="project-id") 
-    df_glob.to_feather(f"../data/{tab_glob}.feather")
-    df_eez.to_feather(f"../data/{tab_eez}.feather")
-else:
-    df_glob = pd.read_feather(f"../data/{tab_glob}.feather", use_threads=True)
-    df_eez = pd.read_feather(f"../data/{tab_eez}.feather", use_threads=True)
-
-df3 = df_glob
-df4 = df_eez 
-
-df_eez.head()
+df3 = pd.read_csv(data_glob, parse_dates=['detect_date'])
+df4 = pd.read_csv(data_eez, parse_dates=['detect_date'])
 
 # %%
-df3 = df3.ffill().bfill()
-df4 = df4.ffill().bfill()
 df4["country"] = df4.iso3.apply(get_country)
 df4["continent"] = df4.iso3.apply(get_continent)
 
 # %%
 df3.head()
 
+# %%
+df4.head()
+
 
 # %%
+# WARNING: if AttributeError: 'str' object has no attribute 'year'
+# parse CSV date column as datetime object
+
 def get_date_years(df, time_col=None):
     
-    def date_to_year(d):
-        start = dt.date(d.year, 1, 1).toordinal()
-        year_length = dt.date(d.year + 1, 1, 1).toordinal() - start
-        return d.year + float(d.toordinal() - start) / year_length
+    def date_to_year(dd):
+        start = dt.date(dd.year, 1, 1).toordinal()
+        year_length = dt.date(dd.year + 1, 1, 1).toordinal() - start
+        return dd.year + float(dd.toordinal() - start) / year_length
 
     def get_frac_year(df, time_col=time_col):
         if time_col:
@@ -369,11 +349,51 @@ def get_date_years(df, time_col=None):
     return df
 
 
-for d in [df3, df4]:
-    d = get_date_years(d, "detect_date")
+df3 = get_date_years(df3, "detect_date")
+df4 = get_date_years(df4, "detect_date")
+
 
 # %%
 # Make WIND time series
+
+def get_trend(x):
+    """Piecewise polynomila fit.
+    
+    For quarterly data Hodrick and Prescott [1] used Smoothing=1600.
+    For monthly data a commonly accepted value in the literature is 14400.
+    For daily data the Smoothing parameter can be anywhere from 10000 to 10^8.
+    """
+    return sm.tsa.filters.hpfilter(x, 129600)
+
+
+def get_outliers(t, x, nstd=1, plot=False):
+    cycle, trend = get_trend(x)
+    resid = x - trend
+    if plot:
+        plt.figure()
+        plt.plot(t, x, t, trend)
+        plt.show()
+    return np.where(np.abs(resid) > nstd * np.nanstd(resid))[0]
+
+
+def filt_spikes(dd, nstd=3, niter=2, interp=True, key=''):
+    """Fit trend and remove residuals > nstd [iteratively]"""
+    dm = {}
+    for (k, v) in zip(dd.keys(), dd.values()):
+        
+        if key and k != key:
+            dm[k] = v
+            continue
+            
+        v = v.astype(float)
+        for _ in range(niter):
+            i_out = get_outliers(v.index.values, v.oil.values, nstd=nstd)
+            v.iloc[i_out] = np.nan
+            if interp:
+                v = v.interpolate().bfill()
+        dm[k] = v
+    return dm
+
 
 countries = [
     "CHN",
@@ -386,32 +406,70 @@ countries = [
     # 'TWN',
 ]
 
-dd = {}
+# One df per country
+# dfs is only for wind plots
+dfs = {}  
+
 for country in countries:
-
-    d = df4[
-        (df4.region == "inside_all_oil_polygons")
-        | (df4.region == "outside_all_oil_polygons")
-    ]
-
-    dd[country] = (
-        d[d.iso3 == country]
+    dfs[country] = (
+        df4[df4.iso3 == country]
         .groupby(["date_year"])
         .sum()
-        .rolling(3, center=True)
-        .median()
     )
+    
+# Filter time series
+# dfs = filt_spikes(dfs, nstd=1, niter=2, interp=True, key='GBR')
+ 
+for k, v in dfs.items():
+    if k == 'GBR':
+        v = v.rolling(3, center=True).mean()
+        dfs[k] = v
 
-list(dd.values())[0].head()
+list(dfs.values())[0].head()
+
 
 # %%
+def add_names(names, ax):
+    for (x,y,z,c) in names:
+        ax.text(
+            x,
+            y,
+            z,
+            ha="right",
+            color=c,
+            fontsize=FONT,
+            transform=ax.transAxes,
+            path_effects=[pe.withStroke(linewidth=2, foreground="w")],
+        )
+        
+        
+def mouse_event(event):
+    print(f"{event.xdata:.0f}, {event.ydata:.0f}")
+
+
+# %%
+# %matplotlib qt
+
 SAVE = True
 PLOT1 = True
 PLOT2 = True
 PLOT3 = True
+FONT = 9
+
+# colors = ["#2954E1", "#F77539", "#24BDB2"]
+c_oil = "#7570b3"
+c_wind = "#d95f02"
+c_other = "#1b9e77"
+
+# c_oil = "#8da0cb"
+# c_wind = "#fc8d62"
+# c_other = "#66c2a5"
+
+scl = 0.5
 
 plt.rcdefaults()
-fig = plt.figure(figsize=(14, 6.5 * 3), constrained_layout=True)
+fig = plt.figure(figsize=(14 * scl, 6.5 * 3 * scl), constrained_layout=True)
+cid = fig.canvas.mpl_connect('button_press_event', mouse_event)
 
 grid1 = GridSpec(
     2,
@@ -432,8 +490,8 @@ grid2 = GridSpec(
     bottom=0.05,
     wspace=0.12,
     hspace=0.2,
-    left=0.07,
-    right=0.96,
+    left=0.09,
+    right=0.98,
 )
 
 sub1 = grid1[(0, slice(0, 2))]
@@ -444,19 +502,19 @@ sub5 = grid2[(0, 1)]
 
 with psm.context(psm.styles.light):
 
-    plt.rc("font", size=14)  # controls default text sizes
-    plt.rc("axes", titlesize=14)  # fontsize of the axes title
-    plt.rc("axes", labelsize=14)  # fontsize of the x and y labels
-    plt.rc("xtick", labelsize=14)  # fontsize of the tick labels
-    plt.rc("ytick", labelsize=14)  # fontsize of the tick labels
-    plt.rc("legend", fontsize=14)  # legend fontsize
+    plt.rc("font", size=FONT)  # controls default text sizes
+    plt.rc("axes", titlesize=FONT)  # fontsize of the axes title
+    plt.rc("axes", labelsize=FONT)  # fontsize of the x and y labels
+    plt.rc("xtick", labelsize=FONT)  # fontsize of the tick labels
+    plt.rc("ytick", labelsize=FONT)  # fontsize of the tick labels
+    plt.rc("legend", fontsize=FONT)  # legend fontsize
 
     # ===== Global Map ===== #
 
     if PLOT1:
 
-        scale = 2.75
-        alpha = 0.3
+        scale = 2.5 * scl
+        alpha = 0.4
 
         prj = cartopy.crs.Robinson(central_longitude=0, globe=None)
         extent = (-140, 170, -60, 90)  # trucate global map
@@ -466,14 +524,14 @@ with psm.context(psm.styles.light):
         ax1.axis("off")
 
         psm.add_land(ax1, color="0.88")
-        psm.add_countries(ax1, linewidth=0.5, facecolor=(0, 0, 0, 0))
+        psm.add_countries(ax1, linewidth=0.5 * scl, facecolor=(0, 0, 0, 0))
         # psm.add_eezs(ax1)
 
         ax1.scatter(
             x=x_oil,
             y=y_oil,
             s=z_oil * scale,
-            c="#2954E1",
+            c=c_oil, # "#2954E1",
             alpha=alpha,
             transform=psm.identity,
             zorder=2000,
@@ -482,7 +540,7 @@ with psm.context(psm.styles.light):
             x=x_wind,
             y=y_wind,
             s=z_wind * scale,
-            c="#F77539",
+            c=c_wind, # "#F77539",
             alpha=alpha,
             transform=psm.identity,
             zorder=1000,
@@ -491,26 +549,16 @@ with psm.context(psm.styles.light):
             x=x_other,
             y=y_other,
             s=z_other * scale,
-            facecolors='#24BDBD',
-            edgecolors='#24BDBD',
+            facecolors=c_other, # '#24BDBD',
+            edgecolors=c_other, # '#24BDBD',
             transform=psm.identity,
             zorder=10,
         )
-        # ax1.scatter(
-        #     x=x_mara,
-        #     y=y_mara,
-        #     s=z_mara * scale,
-        #     facecolors='none',
-        #     edgecolors="#2954E1",
-        #     linewidth=1,
-        #     transform=psm.identity,
-        #     zorder=2,
-        # )
         ax1.scatter(
             x=x_mara,
             y=y_mara,
             s=z_mara * scale,
-            c="#2954E1",
+            c=c_oil, # "#2954E1",
             alpha=alpha - 0.05,
             transform=psm.identity,
             zorder=2,
@@ -523,16 +571,16 @@ with psm.context(psm.styles.light):
             "Wind turbines",
             "Other structures",
         ]
-        colors = ["#2954E1", "#F77539", "#24BDB2"]
+        colors = [c_oil, c_wind, c_other]
         
-        for label, color, ypos in zip(labels, colors, [0.35, 0.305, 0.26]):
+        for label, color, ypos in zip(labels, colors, [0.45, 0.40, 0.35]):
             ax1.text(
                 0.007,
                 ypos,
                 label,
                 ha="left",
                 color=color,
-                fontsize=17,
+                fontsize=FONT,
                 weight="normal",
                 transform=ax1.transAxes,
             )
@@ -557,6 +605,8 @@ with psm.context(psm.styles.light):
             loc="lower left",
             borderaxespad=0.5,
         )
+        
+        ax1.text(0.01, 0.98, 'a', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax1.transAxes)
 
     # ===== Regional Maps ===== #
 
@@ -575,8 +625,8 @@ with psm.context(psm.styles.light):
 
             ax.set_extent(extent, crs=psm.identity)
             ax.set_adjustable("datalim")
-            psm.add_land(ax, edgecolor='darkgray', facecolor='0.88', linewidth=0.5)
-            psm.add_countries(ax, linewidth=1, facecolor=(0, 0, 0, 0))
+            psm.add_land(ax, edgecolor='darkgray', facecolor='0.88', linewidth=0.5 * scl)
+            psm.add_countries(ax, linewidth=1 * scl, facecolor=(0, 0, 0, 0))
 
             norm = mpcolors.LogNorm(vmin=1e-2, vmax=1e2)
 
@@ -594,8 +644,8 @@ with psm.context(psm.styles.light):
                     -0.066,
                     "Hours of vessel activity per km$^2$",
                     ha="right",
-                    color="0.2",
-                    fontsize=17,
+                    color="0.1",
+                    fontsize=FONT,
                     transform=ax.transAxes,
                 )
             elif count == 1:
@@ -621,73 +671,80 @@ with psm.context(psm.styles.light):
                 f"{s} vessel traffic",
                 ha="right",
                 va="top",
-                color='0.2',
+                color='0.1',
                 weight="normal",
-                fontsize=20,
+                fontsize=FONT,
                 transform=ax.transAxes,
             )
+            
+            x, y, s = (177472, 412876, 'NO')
+            ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+            x, y, s = (535756, 252266, 'SE')
+            ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+            x, y, s = (259836, -19536, 'DK')
+            ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+            x, y, s = (387500, -431356,'DE')
+            ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+            x, y, s = (41571, -443711, 'NL')
+            ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+            x, y, s = (-452613, -365465, 'GB')
+            ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+            
+            if count == 0:
+                ax.text(0.02, 0.98, 'b', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax.transAxes)
+        
             count += 1
 
     # ===== Time Series ===== #
 
     if PLOT3:
 
-        color_wind = palette2[0]
-        color_oil = "#4BA6AF"
-
         ax4 = fig.add_subplot(sub4)
 
-        d_in = df3[df3.region == "inside_all_oil_polygons"]
-        d_out = df3[df3.region == "outside_all_oil_polygons"]
+        # Filter time series for spikes
+        df3_filt = df3.rolling(3, center=True).median()
+        
+        y1_min = df3_filt.oil
+        y1_max = df3_filt.oil + df3_filt.probable_oil.values + df3_filt.possible_oil.values
+        
+        y1_err = (y1_max - y1_min) / 2
+        y1_mid = y1_min + y1_err
 
-        d_in = d_in.rolling(3, center=True).median()
-        d_out = d_out.rolling(3, center=True).median()
-
-        d_in = d_in.iloc[2:, :]
-        d_out = d_out.iloc[2:, :]
-
-        y1 = d_in.oil + d_in.other.values
-        y1_max = d_in.oil + d_in.other.values + d_out.oil.values
-        y1_min = d_in.oil
-        y2 = d_in.wind + d_out.wind.values
-        x = d_in.date_year
-
-        y1_err = (y1_max - y1) / 2.0
-        y1_mid = y1 + y1_err
+        y2 = df3_filt.wind
+        x = df3_filt.date_year
 
         ax4.errorbar(
-            x.values[::2],
+            x.values[::2],  # plot every other error bar
             y1_mid.values[::2],
             yerr=y1_err[::2],
-            color=color_oil,
+            color=c_oil,
             ls="none",
-            linewidth=2.5,
-            capsize=6,
-            capthick=2,
+            linewidth=2.6 * scl,
+            capsize=6 * scl,
+            capthick=2 * scl,
         )
-        ax4.plot(x, y2, color=color_wind, linewidth=2.5)  # WIND
+        ax4.plot(x, y2, color=c_wind, linewidth=2.6 * scl)  # WIND
         ax4.set_ylim(4400, 11000)
 
-        # ax4.set_ylabel("Number of detected structures in the ocean")
         ax4.text(
-            -0.125,
+            -0.15,
             0.5,
             "Number of detected structures in the ocean",
             ha="right",
             va="center",
-            color=color_wind,
+            color='0.1',
             weight="normal",
-            fontsize=15,
+            fontsize=FONT,
             rotation=90,
             transform=ax4.transAxes,
         )
         ax4.text(
             0.04,
-            0.53,
+            0.45,
             "Oil infrastructure",
             ha="left",
-            color=color_oil,
-            fontsize=17,
+            color=c_oil,
+            fontsize=FONT,
             transform=ax4.transAxes,
         )
         ax4.text(
@@ -695,10 +752,13 @@ with psm.context(psm.styles.light):
             0.05,
             "Wind turbines",
             ha="left",
-            color=color_wind,
-            fontsize=17,
+            color=c_wind,
+            fontsize=FONT,
             transform=ax4.transAxes,
         )
+        
+        
+        ax4.text(-0.17, 1.14, 'c', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax4.transAxes)
 
         #####
 
@@ -706,19 +766,25 @@ with psm.context(psm.styles.light):
 
         indices = np.linspace(0.2, 1.2, len(countries))  # for colors
 
-        for k, (n, d, i) in enumerate(zip(dd.keys(), dd.values(), indices)):
+        for k, (n, d, i) in enumerate(zip(dfs.keys(), dfs.values(), indices)):
             ax5.plot(
                 d.index,
                 d.wind,
                 label=n,
                 color=palette4[::-1][k],
-                linewidth=2.5,
+                linewidth=2.6 * scl,
             )
             ax5.set_ylim(100, 5000)
 
-        legend = ax5.legend(frameon=False)
-        for k, text in enumerate(legend.get_texts()):
-            text.set_color(palette4[::-1][k])
+        c = [palette4[::-1][k] for k in range(5)]
+        names = [
+            (0.96, 0.98, 'China', c[0]),
+            (0.96, 0.55, 'United Kingdom', c[1]),
+            (0.96, 0.32, 'Germany', c[2]),
+            (0.96, 0.13, 'Denmark', c[3]),
+            (0.96, 0.015, 'Netherlands', c[4]),
+        ]
+        add_names(names, ax5)
 
         #####
 
@@ -730,18 +796,22 @@ with psm.context(psm.styles.light):
             # ax.grid(axis="y")
 
         ax5.text(
-            0.04,
-            0.45,
-            "Wind turbines",
+            0.05,
+            0.95,
+            "Wind turbines\ntop nations",
             ha="left",
-            color=color_wind,
-            fontsize=17,
+            va="top",
+            color=c_wind,
+            fontsize=FONT,
             transform=ax5.transAxes,
         )
 
 if SAVE:
     plt.savefig(
-        "figures/infra_global_map_v2.png", bbox_inches="tight", pad_inches=0.05, dpi=300
+        "figures/infra_global_maps_series_v3.jpg",
+        bbox_inches="tight",
+        pad_inches=0.05,
+        dpi=300
     )
 
 # %%

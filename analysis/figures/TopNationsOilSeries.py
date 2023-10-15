@@ -1,8 +1,3 @@
-# %% [markdown]
-# ## V8 (using interpolated data, and revised infrastructure)
-# 
-# Time series of oil 
-
 # %%
 import datetime
 import warnings
@@ -21,10 +16,28 @@ import statsmodels.api as sm
 from scipy import stats
 from matplotlib.gridspec import GridSpec
 
-from cmaps import mycmap4
+from cmaps import * 
 
 warnings.filterwarnings("ignore")
 %matplotlib inline
+
+# %%
+# palette = [
+#     "#a6cee3",
+#     "#1f78b4",
+#     "#b2df8a",
+#     "#33a02c",
+#     "#fb9a99",
+#     "#e31a1c",
+#     "#fdbf6f",
+#     "#ff7f00",
+#     "#cab2d6",
+#     "#6a3d9a",
+# ]
+# 
+# mycmap = get_continuous_cmap(palette, n=10)
+
+mycmap = mpl.cm.tab20c_r
 
 # %%
 import pycountry
@@ -65,21 +78,15 @@ def get_country(x):
 
 # %%
 # NOTE: feather can store date objects, CSV dates need to be parsed (str -> date)
-df2 = pd.read_csv(
-    "../data/infra_global_time_series_v20230214.csv", parse_dates=["detect_date"]
-)
-df3 = pd.read_csv(
-    "../data/infra_poly_time_series_v20230214.csv", parse_dates=["detect_date"]
-)
-df4 = pd.read_csv(
-    "../data/infra_eez_time_series_v20230214.csv", parse_dates=["detect_date"]
-)
+f2 = "../data/infra_global_time_series_v20230816.csv"
+f3 = "../data/infra_poly_time_series_v20230816.csv"
+f4 = "../data/infra_eez_time_series_v20230816.csv"
+
+df2 = pd.read_csv(f2, parse_dates=["detect_date"])
+df3 = pd.read_csv(f3, parse_dates=["detect_date"])
+df4 = pd.read_csv(f4, parse_dates=["detect_date"])
 
 # %%
-df2 = df2.ffill().bfill()
-df3 = df3.ffill().bfill()
-df4 = df4.ffill().bfill()
-
 df4["country"] = df4.iso3.apply(get_country)
 df4["continent"] = df4.iso3.apply(get_continent)
 
@@ -107,41 +114,10 @@ def get_date_years(df, time_col=None):
 for d in [df2, df3, df4]:
     d = get_date_years(d, "detect_date")
 
-# %% [markdown]
-# ## WIND
-
 # %%
-# Select wind countries to plot
-
-countries = [
-    "CHN",
-    "GBR",
-    "DEU",
-    "DNK",
-    "NLD",
-    # 'BEL',
-    # 'SWE',
-    # 'TWN',
-]
-
-dd = {}
-for country in countries:
-    inside = "inside_all_oil_polygons"
-    outside = "outside_all_oil_polygons"
-    d = df4[(df4.region == inside) | (df4.region == outside)]
-
-    dd[country] = (
-        d[d.iso3 == country]
-        .groupby(["date_year"])
-        .sum()
-        .rolling(3, center=True)
-        .median()
-    )
-
-list(dd.values())[0].head()
-
-# %% [markdown]
-# ## OIL
+df2 = df2[df2.date_year < 2022]
+df3 = df3[df3.date_year < 2022]
+df4 = df4[df4.date_year < 2022]
 
 # %%
 # Make annual time series per country
@@ -151,38 +127,63 @@ countries1 = [
     "SAU",
     "IDN",
     "ARE",
-    "THA",
     "NGA",
-    "CHN",
+    "THA",
     "MYS",
-    'AGO',
     "TTO",
+    "CHN",
+    'AGO',
 ]
 countries2 = [
     'MEX',
     'IND',
-    'GBR',
+    'EGY',
     'QAT',
     'IRN',
-    'EGY',
+    'GBR',
     'BRA',
     'BRN',
     'GAB',
     'NLD',
 ]
 
+# Code -> Name
+code2name = {
+    "USA": 'United States',
+    "SAU": 'Saudi Arabia',
+    "IDN": 'Indonesia',
+    "ARE": 'United Arab Emirates',
+    "NGA": 'Nigeria',
+    "THA": 'Thailand',
+    "MYS": 'Malaysia',
+    "TTO": 'Trinidad and Tobago',
+    "CHN": 'China',
+    'AGO': 'Angola',
+    'MEX': 'Mexico',
+    'IND': 'India',
+    'EGY': 'Egypt',
+    'QAT': 'Qatar',
+    'IRN': 'Iran',
+    'GBR': 'United Kindom',
+    'BRA': 'Brazil',
+    'BRN': 'Brunei Darussalam',
+    'GAB': 'Gabon',
+    'NLD': 'Netherlands',
+}
+
+N1 = len(countries1)
+N2 = len(countries2)
+
 # One df per country
 def get_series(df4, countries):
-    dd = {}
+    dfs = {}
     for country in countries:
-        # print(country)
-        d = df4[df4.region == "inside_all_oil_polygons"]
-        dd[country] = (
-            d[d.iso3 == country]
+        dfs[country] = (
+            df4[df4.iso3 == country]
             .groupby(["date_year"])
             .sum()
         )
-    return dd
+    return dfs
         
     
 dd1 = get_series(df4, countries1)
@@ -255,23 +256,22 @@ def get_rolling(dd, window, op="median", center=True):
 
 
 def plot_series(dd, ax=None):
-    mycmap4_r = mycmap4.reversed()
+    mycmap_r = mycmap.reversed()
     for i, (n, d) in enumerate(zip(dd.keys(), dd.values())):
+        n = code2name[n]
         print(i, n)
         ax.plot(
             d.index,
             d.oil,
             label=n,
-            # color=mycmap1(i/N1),
-            color=mycmap4_r(i/N1),
+            color=mycmap_r(i/N1),
             linewidth=2.75,
         )
     return ax
 
 
-SAVE = False
-N1 = len(countries1)
-N2 = len(countries2)
+# %%
+# Filter time series
 
 dd1 = filt_spikes(dd1, nstd=2, niter=2, interp=True)
 dd2 = filt_spikes(dd2, nstd=2, niter=2, interp=True)
@@ -283,51 +283,53 @@ dd2 = get_medians(dd2, quarterly=False)
 # dd1 = get_rolling(dd1, 5, op='median')
 # dd2 = get_rolling(dd2, 5, op='median')
 
+# %%
+# NOTE: Plot all time series in absolute/continous y-axis
 
-# ======= PLOT ======= #
-
-plt.figure(figsize=(10, 10))
-
-ax1 = plt.subplot(121)
-plot_series(dd1, ax1)
-plt.legend(bbox_to_anchor=(0, 1), loc="upper left", ncol=1, frameon=False)
-plt.ylabel("Number of detected oil structures", fontsize=12)
-# plt.grid(False)
-
-ax2 = plt.subplot(122)
-plot_series(dd2, ax2)
-plt.legend(bbox_to_anchor=(0, 1), loc="upper left", ncol=1, frameon=False)
-# plt.grid(False)
-plt.ylim(100, 220)
-
-
-for ax in [ax1, ax2]:
-    # Move left and bottom spines outward by 10 points
-    ax.spines.left.set_position(('outward', 10))
-    ax.spines.bottom.set_position(('outward', 10))
-    # Hide the right and top spines
-    ax.spines.right.set_visible(False)
-    ax.spines.top.set_visible(False)
-    # Only show ticks on the left and bottom spines
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks_position('bottom')
-
-
-if SAVE:
-    plt.savefig("../figures/oilseries4.png", bbox_inches="tight", pad_inches=0.25, dpi=300)
+# SAVE = False
+# 
+# plt.figure(figsize=(10, 10))
+# 
+# ax1 = plt.subplot(121)
+# plot_series(dd1, ax1)
+# plt.legend(bbox_to_anchor=(0, 1), loc="upper left", ncol=1, frameon=False)
+# plt.ylabel("Number of detected oil structures", fontsize=12)
+# # plt.grid(False)
+# 
+# ax2 = plt.subplot(122)
+# plot_series(dd2, ax2)
+# plt.legend(bbox_to_anchor=(0, 1), loc="upper left", ncol=1, frameon=False)
+# # plt.grid(False)
+# plt.ylim(100, 220)
+# 
+# 
+# for ax in [ax1, ax2]:
+#     # Move left and bottom spines outward by 10 points
+#     ax.spines.left.set_position(('outward', 10))
+#     ax.spines.bottom.set_position(('outward', 10))
+#     # Hide the right and top spines
+#     ax.spines.right.set_visible(False)
+#     ax.spines.top.set_visible(False)
+#     # Only show ticks on the left and bottom spines
+#     ax.yaxis.set_ticks_position('left')
+#     ax.xaxis.set_ticks_position('bottom')
+# 
+# 
+# if SAVE:
+#     plt.savefig("../figures/oilseries4.png", bbox_inches="tight", pad_inches=0.25, dpi=300)
 
 # %%
-# It figures out the correct height ratios of (broken) subplots
+# NOTE: It figures out the correct height ratios of (broken) subplots
 
-SAVE = True
+SAVE = False
 
 import matplotlib.gridspec as gridspec
 
 fig = plt.figure(figsize=(7.75, 8.2))
 
-ylim1 = (2110, 2430)  # outliers only
+ylim1 = (2125, 2470)  # outliers only
 ylim2 = (200, 780)  # most of the data
-ylim3 = (100, 220)
+ylim3 = (110, 220)
 
 ylim1ratio = (ylim1[1]-ylim1[0])/(ylim2[1]-ylim2[0]+ylim1[1]-ylim1[0])
 ylim2ratio = (ylim2[1]-ylim2[0])/(ylim2[1]-ylim2[0]+ylim1[1]-ylim1[0])
@@ -369,7 +371,7 @@ ax2.plot((xlim[0]-dx,xlim[0]+dx), (ylim2[1]-dy,ylim2[1]+dy), **kwargs)
 ax1.set_xlim(xlim)
 ax2.set_xlim(xlim)
 
-ax1.legend(loc="upper right", frameon=False, labelcolor='linecolor')
+ax1.legend(bbox_to_anchor=(1.03, 1.28), loc="upper right", frameon=False, labelcolor='linecolor', fontsize=10)
 ax1.grid(axis='x')
 ax2.grid(axis='x')
 
@@ -383,16 +385,18 @@ ax3.spines[['right', 'top']].set_visible(False)
 ax3.yaxis.set_ticks(range(*ylim3, 10))
 ax3.minorticks_off()
 
-ax3.legend(loc="upper left", frameon=False, labelcolor='linecolor')
+ax3.legend(bbox_to_anchor=(0.05, 1.1), loc="upper left", frameon=False, labelcolor='linecolor', fontsize=10)
 ax3.grid(axis='x')
 
     
 plt.tight_layout()
 
 if SAVE:
-    plt.savefig("figures/oilseries6b.png", bbox_inches="tight", pad_inches=0.1, dpi=300)
+    plt.savefig(
+        "figures/top_nations_oil_series_v3.jpg",
+        bbox_inches="tight",
+        pad_inches=0.1,
+        dpi=300
+    )
 
 # %%
-
-
-

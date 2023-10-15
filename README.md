@@ -7,7 +7,7 @@ Watch](https://globalfishingwatch.org) et al. (2023, Nature)**.
     .
     ├── README.md   # this file
     ├── LICENSE     # usage and distribution conditions
-    ├── analyses    # code and notebooks of analyses and figures
+    ├── analysis    # code and notebooks of analyses and figures
     ├── detector    # code of SAR detection system in Earth Engine
     └── nnets       # code of Deep Learning models and training
 

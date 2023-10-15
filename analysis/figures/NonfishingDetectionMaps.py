@@ -40,9 +40,10 @@ import skimage
 # ## Map global fishing activity
 
 # %%
-# Load data file generated in Figure2v5.py
+# Load data file generated in FishingDetectionMaps.py 
 df = pd.read_feather('../data/all_detections_matched_rand.feather', use_threads=True)
 df.head()
+print(len(df))
 
 # %%
 # Split into fishing and non-fishing
@@ -149,22 +150,33 @@ def scatter(x, y, c='r', s=1, ax=None, z=10):
     return ax
 
 
+def mouse_event(event):
+    print(f"{event.xdata:.0f}, {event.ydata:.0f}")
+
+
 # %%
 df_nonf.category_rand.unique()
 
 # %%
-# Sup fig (non-fishing)
-b1 = (2.022632,52.222270,  3.25, 0.025, 'North Sea\nEnglish Channel', 'lr')
-b2 = (10.918211,56.029331, 3.5, 0.025, 'Sweden\nDenmark', 'ur')
-b4 = (54.067225,25.957653, 5, 0.075, 'Persian Gulf', 'ur')
-b7 = (122.117374,30.471462, 2.5, 0.04, 'East China Sea\nShanghai', 'll')
-b5 = (103.499679,1.073024, 5.5, 0.05, 'Strait of Malacca\nMalaysia, Indonesia', 'll')
-b10 = (130.249640,34.276966, 3.75, 0.05, 'South Korea Strait', 'ur')
+# # %matplotlib qt
 
-b3 = (49.721489,28.961714, 3.5, 0.15)  # Persian Gulf North
-b6 = (100.269885,11.373297, 4.5, 0.1)  # Gulf of Tailand
-b8 = (120.458908,35.121065, 1.75, 0.075)  # East China
-b9 = (120.285701,38.740094, 3, 0.05)  # Bohai Sea
+SAVE = True
+FONT = 10
+
+scl = 0.933333333
+
+# Sup fig (non-fishing)
+b1 = (2.022632,52.222270,  3.25, 0.025 * scl, 'North Sea\nEnglish Channel', 'lr')
+b2 = (10.918211,56.029331, 3.5, 0.025 * scl, 'Sweden\nDenmark', 'ur')
+b4 = (54.067225,25.957653, 5, 0.075 * scl, 'Persian Gulf', 'ur')
+b7 = (122.117374,30.471462, 2.5, 0.04 * scl, 'East China Sea\nShanghai', 'll')
+b5 = (103.499679,1.073024, 5.5, 0.05 * scl, 'Strait of Malacca\nMalaysia, Indonesia', 'll')
+b10 = (130.249640,34.276966, 3.75, 0.05 * scl, 'South Korea Strait', 'ur')
+
+b3 = (49.721489,28.961714, 3.5, 0.15 * scl)  # Persian Gulf North
+b6 = (100.269885,11.373297, 4.5, 0.1 * scl)  # Gulf of Tailand
+b8 = (120.458908,35.121065, 1.75, 0.075 * scl)  # East China
+b9 = (120.285701,38.740094, 3, 0.05 * scl)  # Bohai Sea
 
 location = {
     'll': (0.02, 0.02, 'left', 'bottom'),
@@ -174,9 +186,10 @@ location = {
 }
 
 DF = df_nonf  # NON-FISHING DATA
-SAVE = True
-matchcolor = "#07A9FD"
-darkcolor = "#FD7F0C" 
+# matchcolor = "#07A9FD"
+# darkcolor = "#FD7F0C" 
+darkcolor = "#d7191c"
+matchcolor = "#2c7bb6"
 landcolor = '0.85'
 darkfirst = True
 alpha = 1
@@ -193,7 +206,8 @@ proj_info = [
 rows, cols, _ = np.shape(proj_info)
 
 plt.rcdefaults()  # <-- important
-fig = plt.figure(figsize=(3.75 * cols, 3.15 * rows * 1.1), constrained_layout=True)
+fig = plt.figure(figsize=(3.75 * cols * scl, 3.15 * rows * 1.1 * scl), constrained_layout=True)
+cid = fig.canvas.mpl_connect('button_press_event', mouse_event)
 fig.patch.set_facecolor('white')
 sub = 0
 
@@ -262,9 +276,7 @@ with psm.context(psm.styles.light):
                     cmap = mpl.colors.ListedColormap([darkcolor, matchcolor])
                     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
                     smap = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
-                    cax = ax.inset_axes((0, -0.04, length, 0.0175)) # horizontal
-                    # cax = ax.inset_axes((0, -0.04, 0.83, 0.01)) # horizontal
-                    # cax = ax.inset_axes((1.03, 0, 0.01, 1))  # vertical
+                    cax = ax.inset_axes((0, -0.045, length, 0.018)) # horizontal
                     
                     cbar = fig.colorbar(
                         smap,
@@ -290,7 +302,6 @@ with psm.context(psm.styles.light):
                     xloc = length + 0.01
                     yloc = -0.018
                     space = " " * 11 if npts < 1000 else " " * 13
-                    add = ' dark' if sub != 5 else ''
                     
                     ax.text(
                         xloc,
@@ -299,53 +310,102 @@ with psm.context(psm.styles.light):
                         ha="left",
                         va="top",
                         color='0.3',
-                        fontsize=8,
+                        fontsize=FONT,
                         transform=ax.transAxes,
                     )
                     ax.text(
                         xloc,
                         yloc,
-                        f"{space}{pdark:.0f}%" + add,
+                        f"{space}{pdark:.0f}%",
                         ha="left",
                         va="top",
                         color=darkcolor,
-                        fontsize=8,
-                        weight='bold',
+                        fontsize=FONT,
+                        weight='normal',
                         transform=ax.transAxes,
                     )
                     
                     if sub == 5:
                         ax.text(
                             0,
-                            -0.06,
-                            "dark activity",
+                            -0.07,
+                            "not tracked",
                             ha="left",
                             va="top",
                             color=darkcolor,
-                            fontsize=10,
+                            fontsize=FONT,
                             transform=ax.transAxes,
                         )
                         ax.text(
                             length * pdark / 100,
-                            -0.06,
+                            -0.07,
                             "publicly tracked",
                             ha="left",
                             va="top",
                             color=matchcolor,
-                            fontsize=10,
+                            fontsize=FONT,
                             transform=ax.transAxes,
                         )
+                        
+                    if sub == 6:
+                        ax.text(
+                            0,
+                            -0.07,
+                            "Non-fishing vessel detections",
+                            ha="left",
+                            va="top",
+                            color='0.1',
+                            fontsize=FONT,
+                            transform=ax.transAxes,
+                        )
+                        
                     # ===== labels ===== #
                     
-                    x, y, ha, va = location[loc]
-                    ax.text(x, y, label, ha=ha, va=va, color='0.4', transform=ax.transAxes)
+                    # x, y, ha, va = location[loc]
+                    # ax.text(x, y, label, ha=ha, va=va, color='0.4', transform=ax.transAxes)
                     
-                # if sub < 3:
-                #     continue
-                # break
-            # break
-
+                    # ===== Annotations ===== #
+                    
+                    if sub == 1:
+                        x, y, s = (-133107, 7314, "UNITED\nKINGDOM")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                        x, y, s = (139399, -143033, "BELGIUM")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                        x, y, s = (196255, -4432, "NETHERLANDS")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=90, style='normal', fontsize=FONT)
+                    if sub == 2:
+                        x, y, s = (-105756, 16783, "DENMARK")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                        x, y, s = (162437, 139551, "SWEDEN")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                    if sub == 3:
+                        x, y, s = (33612, 202509, "IRAN")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                        x, y, s = (-38369, -247373, "UNITED ARAB EMIRATES")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                        x, y, s = (233360, -247373, "OMAN")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                    if sub == 4:
+                        x, y, s = (-104047, 68373, "CHINA")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                    if sub == 5:
+                        x, y, s = (-125136, 215999, "MALAYSIA")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                        x, y, s = (-188375, -171336, "INDONESIA")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                    if sub == 6:
+                        x, y, s = (-171015, 154616, "SOUTH\nKOREA")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+                        x, y, s = (73566, -135908, "JAPAN")
+                        ax.text(x, y, s, ha='center', va='center', color='0.6', rotation=0, style='normal', fontsize=FONT)
+            
+            
 if SAVE:
-    plt.savefig("figures/fig2v2sup2.png", bbox_inches="tight", pad_inches=0.01, dpi=300)
+    plt.savefig(
+        "figures/nonfishing_detection_maps_v3.jpg",
+        bbox_inches="tight",
+        pad_inches=0.01,
+        dpi=300
+    )
 
 # %%
