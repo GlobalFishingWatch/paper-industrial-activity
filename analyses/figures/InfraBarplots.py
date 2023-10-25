@@ -23,11 +23,18 @@ import seaborn as sns
 
 sns.set_theme(style="whitegrid")
 
-# %%
-oil_bplot = pd.read_csv('../../prj-global-sar-analysis/data/infra_barplot_oil_v20230816.csv')
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['font.sans-serif'] = "Helvetica"
+matplotlib.rcParams['font.family'] = "sans-serif"
+matplotlib.rcParams['figure.dpi'] = 300
+
 
 # %%
-wind_bplot = pd.read_csv('../../prj-global-sar-analysis/data/infra_barplot_wind_v20230816.csv')
+oil_bplot = pd.read_csv('../data/infra_barplot_oil_v20230816.csv')
+
+# %%
+wind_bplot = pd.read_csv('../data/infra_barplot_wind_v20230816.csv')
 
 # %%
 oil_bplot = oil_bplot[:15]
@@ -79,6 +86,16 @@ axs[1].legend(labels = ['wind ', 'probable wind'], frameon=False, fontsize = 16,
 axs[0].tick_params(axis='both', which='major', labelsize=15)
 axs[1].tick_params(axis='both', which='major', labelsize=15)
 
-plt.savefig('barchart_oil_wind_eez.jpeg', bbox_inches="tight", dpi = 300)
+# plt.savefig('barchart_oil_wind_eez.jpeg', bbox_inches="tight", dpi = 300)
+
+plt.savefig(
+    "barchart_oil_wind_eez.pdf",
+    transparent=True,
+    bbox_inches="tight",
+    pad_inches=0,
+    dpi='figure',
+)
 plt.show()
 
+
+# %%

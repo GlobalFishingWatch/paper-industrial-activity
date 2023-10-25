@@ -20,8 +20,15 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 # %matplotlib inline
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['font.sans-serif'] = "Helvetica"
+matplotlib.rcParams['font.family'] = "sans-serif"
+matplotlib.rcParams['figure.dpi'] = 300
+
+
 # %%
-df = pd.read_csv('../../prj-global-sar-analysis/data/vessel_barplots_v20230815.csv')
+df = pd.read_csv('../data/vessel_barplots_v20230815.csv')
 
 # %%
 df['AIS fishing'] = df.matched_fishing + df.matched_unknown_likelyfish
@@ -93,7 +100,16 @@ axs[1].set_axisbelow(True)
 
 plt.tight_layout()
 
-plt.savefig('barchart_fishing_nonfishing_eez.jpeg', bbox_inches="tight", dpi = 300)
+# plt.savefig('barchart_fishing_nonfishing_eez.jpeg', bbox_inches="tight", dpi = 300)
+
+plt.savefig(
+    "barchart_fishing_nonfishing_eez.pdf",
+    transparent=True,
+    bbox_inches="tight",
+    pad_inches=0,
+    dpi='figure',
+)
+
 plt.show()
 
 
