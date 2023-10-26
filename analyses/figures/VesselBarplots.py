@@ -16,15 +16,13 @@
 
 # %%
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
-# %matplotlib inline
 
 import matplotlib
 matplotlib.rcParams['pdf.fonttype'] = 42
-matplotlib.rcParams['font.sans-serif'] = "Helvetica"
+matplotlib.rcParams['font.sans-serif'] = "Roboto"
 matplotlib.rcParams['font.family'] = "sans-serif"
-matplotlib.rcParams['figure.dpi'] = 300
+matplotlib.rcParams['figure.dpi'] = 600
 
 
 # %%
@@ -58,11 +56,10 @@ df_non_fishing = df_non_fishing.sort_values("tot_nonfishing", ascending=False)
 df_non_fishing = df_non_fishing.head(n)
 
 fig1, axs = plt.subplots(ncols=2, nrows=1,figsize=(11, 9))
-sns.set(style = 'whitegrid')
 
 b1 = d_fishing[["dark fishing", "AIS fishing"]].plot(
     kind="barh", stacked=True, width=0.7, 
-    color = [ '#ca0020', '#2c7bb6'], ax = axs[0],).invert_yaxis()
+    color = [ '#ca0020', '#2c7bb6'], ax = axs[0],zorder=3).invert_yaxis()
 
 
 for x, y in enumerate(d_fishing['perc_dark_fishing']):
@@ -72,7 +69,7 @@ for x, y in enumerate(d_fishing['perc_dark_fishing']):
 
 b2 = df_non_fishing[["dark non-fishing", "AIS non-fishing"]].plot(ax=axs[1],
     kind="barh", stacked=True, width=0.7, 
-    color = [ '#ca0020', '#2c7bb6']).invert_yaxis()
+    color = [ '#ca0020', '#2c7bb6'], zorder=3).invert_yaxis()
 
 for x, y in enumerate(df_non_fishing['perc_dark_non_fishing']):
     axs[1].annotate(f'{y}%', (df_non_fishing[["dark non-fishing", "AIS non-fishing"]].sum(axis=1).astype(int)[x], x), ha='left', va='center', size=14, xytext=(3, 0),
@@ -87,7 +84,7 @@ for i in axs:
     i.spines['left'].set_visible(False)
     i.set_ylabel('')
     i.grid(visible=False, axis = 'y')
-    i.grid(visible=True, axis = 'x', color = 'gainsboro')
+    i.grid(visible=True, axis = 'x', zorder=0)
 
 axs[0].get_legend().remove()
 axs[1].get_legend().remove()

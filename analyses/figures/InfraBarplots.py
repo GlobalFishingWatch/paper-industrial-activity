@@ -20,14 +20,12 @@ import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-
-sns.set_theme(style="whitegrid")
-
 import matplotlib
+
 matplotlib.rcParams['pdf.fonttype'] = 42
-matplotlib.rcParams['font.sans-serif'] = "Helvetica"
+matplotlib.rcParams['font.sans-serif'] = "Roboto"
 matplotlib.rcParams['font.family'] = "sans-serif"
-matplotlib.rcParams['figure.dpi'] = 300
+matplotlib.rcParams['figure.dpi'] = 600
 
 
 # %%
@@ -46,11 +44,10 @@ wind_bplot.replace('United Arab Emirates', 'Emirates', inplace=True)
 
 # %%
 fig1, axs = plt.subplots(ncols=1, nrows=2, figsize=(5,12), gridspec_kw={'height_ratios': [2, 1]})
-sns.set(style = 'whitegrid')
 
 b1 = oil_bplot.set_index('country_name').plot(
     kind="barh", stacked=True, width=0.7, 
-    color = ['#003f5c', '#ffa600'], ax = axs[0]).invert_yaxis()
+    color = ['#003f5c', '#ffa600'], ax = axs[0], zorder=3).invert_yaxis()
 
 
 for x, y in enumerate(oil_bplot.sum(axis=1).astype(int)):
@@ -60,7 +57,7 @@ for x, y in enumerate(oil_bplot.sum(axis=1).astype(int)):
 
 b2 = wind_bplot.set_index('country_name').plot(ax=axs[1],
     kind="barh", stacked=True, width=0.7, 
-    color = ['#003f5c', '#ffa600']).invert_yaxis()
+    color = ['#003f5c', '#ffa600'], zorder=3).invert_yaxis()
 
 for x, y in enumerate(wind_bplot.sum(axis=1).astype(int)):
     axs[1].annotate(y, (y, x), ha='left', va='center', size=14, xytext=(3, 0),
@@ -75,7 +72,7 @@ for i in axs:
     i.spines['left'].set_visible(False)
     i.set_ylabel('')
     i.grid(visible=False, axis = 'y')
-    i.grid(visible=True, axis = 'x', color = 'gainsboro')
+    i.grid(visible=True, axis = 'x', zorder=0)
 
 axs[0].get_legend().remove()
 axs[1].get_legend().remove()
@@ -97,5 +94,9 @@ plt.savefig(
 )
 plt.show()
 
+
+# %%
+
+# %%
 
 # %%
