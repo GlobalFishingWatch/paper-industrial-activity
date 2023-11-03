@@ -337,7 +337,7 @@ sk_other AS (
   SELECT
     ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
   FROM
-    `proj_global_sar.skytruth_review_other_v20230810`),
+    `proj_global_sar.skytruth_review_other_v20231103`),
 
 sk_not_infra AS (
 SELECT
@@ -350,6 +350,12 @@ SELECT
   ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
 FROM
   `proj_global_sar.skytruth_review_oil_v20230810`),
+
+oil_to_unknown AS (
+  SELECT
+    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
+  FROM
+  `proj_global_sar.jc_oil_to_unknown_v20231103`),
 
 reviewed_wind as (
 SELECT
@@ -380,6 +386,17 @@ CROSS JOIN
   sk_other
 WHERE
   ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
+
+reviewed_oil_to_unknown as (
+SELECT
+  detect_id,
+FROM
+  features
+CROSS JOIN
+  oil_to_unknown
+WHERE
+  detection_label = 'oil'
+  and ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
 
 not_infra as (
 SELECT
@@ -578,6 +595,7 @@ label_reclass AS (
     *,
     CASE
       WHEN detect_id in (select detect_id from not_infra) THEN 'noise'
+      WHEN detect_id in (select detect_id from reviewed_oil_to_unknown) THEN 'unknown'
       WHEN detect_id in (select detect_id from reviewed_oil) THEN 'oil'
       WHEN detect_id in (select detect_id from reviewed_wind) THEN 'wind'
       WHEN detect_id in (select detect_id from reviewed_other) THEN 'unknown'
@@ -926,6 +944,7 @@ from
     *,
     CASE
       WHEN detect_id in (select detect_id from not_infra) THEN 'noise'
+      WHEN detect_id in (select detect_id from reviewed_oil_to_unknown) THEN 'unknown'
       WHEN detect_id in (select detect_id from reviewed_oil) THEN 'oil'
       WHEN detect_id in (select detect_id from reviewed_wind) THEN 'wind'
       WHEN detect_id in (select detect_id from reviewed_other) THEN 'unknown'
@@ -1278,6 +1297,7 @@ from
     *,
     CASE
       WHEN detect_id in (select detect_id from not_infra) THEN 'noise'
+      WHEN detect_id in (select detect_id from reviewed_oil_to_unknown) THEN 'unknown'
       WHEN detect_id in (select detect_id from reviewed_oil) THEN 'oil'
       WHEN detect_id in (select detect_id from reviewed_wind) THEN 'wind'
       WHEN detect_id in (select detect_id from reviewed_other) THEN 'unknown'
