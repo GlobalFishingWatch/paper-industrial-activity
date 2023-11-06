@@ -775,6 +775,17 @@ WHERE
   cluster_label = 'oil'
   AND ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
 
+reviewed_oil_to_unknown_cluster as (
+SELECT
+  detect_id,
+FROM
+  cluster_labels
+CROSS JOIN
+  oil_to_unknown
+WHERE
+  cluster_label = 'oil'
+  and ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
+
 oil_detections_outside_polygon_cluster AS (
 SELECT
   detect_id,
@@ -944,7 +955,7 @@ from
     *,
     CASE
       WHEN detect_id in (select detect_id from not_infra) THEN 'noise'
-      WHEN detect_id in (select detect_id from reviewed_oil_to_unknown) THEN 'unknown'
+      WHEN detect_id in (select detect_id from reviewed_oil_to_unknown_cluster) THEN 'unknown'
       WHEN detect_id in (select detect_id from reviewed_oil) THEN 'oil'
       WHEN detect_id in (select detect_id from reviewed_wind) THEN 'wind'
       WHEN detect_id in (select detect_id from reviewed_other) THEN 'unknown'
@@ -1127,6 +1138,17 @@ WHERE
   subcluster_label = 'oil'
   AND ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
 
+reviewed_oil_to_unknown_subcluster as (
+SELECT
+  detect_id,
+FROM
+  subcluster_labels
+CROSS JOIN
+  oil_to_unknown
+WHERE
+  subcluster_label = 'oil'
+  and ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
+
 oil_detections_outside_polygon_subcluster AS (
 SELECT
   detect_id,
@@ -1297,7 +1319,7 @@ from
     *,
     CASE
       WHEN detect_id in (select detect_id from not_infra) THEN 'noise'
-      WHEN detect_id in (select detect_id from reviewed_oil_to_unknown) THEN 'unknown'
+      WHEN detect_id in (select detect_id from reviewed_oil_to_unknown_subcluster) THEN 'unknown'
       WHEN detect_id in (select detect_id from reviewed_oil) THEN 'oil'
       WHEN detect_id in (select detect_id from reviewed_wind) THEN 'wind'
       WHEN detect_id in (select detect_id from reviewed_other) THEN 'unknown'
