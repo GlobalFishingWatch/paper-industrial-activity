@@ -2,24 +2,24 @@
 
 Linearly interpolate the time series at the missing pixel locations.
 
-Edit parameters in the header of each script, and run in the following order:
+Edit parameters in the header of each script, and run (in the following order):
 
-1) Run query to get pixels to interpolate -> feather dataframe
+Run query to get pixels to interpolate -> feather dataframe
 
-    python query.py
+        python query.py
 
-2) Interpolate one 3D field at a time:
+Interpolate one 3D field at a time:
 
-    python interp.py
+        python interp.py
 
-    Fields:
-    ais_fishing
-    ais_nonfishing
-    dark_fishing
-    dark_nonfishing
-    ais_nonfishing_100
-    dark_nonfishing_100
+        Fields:
+        ais_fishing
+        ais_nonfishing
+        dark_fishing
+        dark_nonfishing
+        ais_nonfishing_100
+        dark_nonfishing_100
 
-3) Merge the interpolated 3D fields and upload to BigQuery.
+Merge the interpolated 3D fields and upload to BigQuery.
 
-    python merges
+        python merge.py
