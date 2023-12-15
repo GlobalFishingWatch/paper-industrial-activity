@@ -1,0 +1,8 @@
+select scene_id, 
+floor(lat_index/200*10) lat_index,
+floor(lon_index/200*10) lon_index,
+avg(look_angle) look_angle,
+sum(1/200*1/200*10*10) overpasses
+from proj_sentinel1_v20210924.detect_foot_raster_200
+where _partitiontime = "{{ YYYY_MM_DD }}"
+group by scene_id, lat_index, lon_index
