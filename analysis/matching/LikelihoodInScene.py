@@ -28,7 +28,9 @@
 import matplotlib.pyplot as plt
 import proplot
 
-from prj_global_sar_analysis.bigquery_helper_functions import query_to_table
+import sys
+sys.path.append('../utils')
+from bigquery_helper_functions import query_to_table
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np

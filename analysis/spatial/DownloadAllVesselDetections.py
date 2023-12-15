@@ -23,7 +23,7 @@ import pyperclip
 
 # Get the query templates
 import sys
-sys.path.append('../utils') 
+sys.path.append('../utils')
 from vessel_queries import *
 from bigquery_helper_functions import query_to_table, update_table_description
 

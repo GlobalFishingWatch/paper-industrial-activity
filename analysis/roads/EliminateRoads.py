@@ -22,7 +22,9 @@
 # Then we turned each road into a series of point pairs, calculated a course from these, and then estimated where a truck moving at 85 miles per hour on a highway or 50 miles per hour on a primary road would appear in the SAR scene. For each scene we then created a polygon that is bounded by where these vessels might appear, and this is an area to exclude for our analyses.
 
 # +
-from prj_global_sar_analysis.bigquery_helper_functions import (
+import sys
+sys.path.append('../utils')
+from bigquery_helper_functions import (
     update_table_description,
     query_to_table,
 )
@@ -676,7 +678,8 @@ subprocess.call(command.split())
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from prj_global_sar_analysis.bigquery_helper_functions import query_to_table
+sys.path.append('../utils')
+from bigquery_helper_functions import query_to_table
 import numpy as np
 
 

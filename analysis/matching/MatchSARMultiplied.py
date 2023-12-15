@@ -30,8 +30,9 @@
 #  - proj_global_sar.matched_mult_recall
 #  - proj_global_sar.matched_mult_recall_length
 #  - proj_global_sar.matched_mult_recall_length
-
-from prj_global_sar_analysis.bigquery_helper_functions import query_to_table
+import sys
+sys.path.append('../utils')
+from bigquery_helper_functions import query_to_table
 from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np

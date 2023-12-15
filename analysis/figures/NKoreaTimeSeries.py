@@ -30,7 +30,7 @@ plt.rcParams['axes.facecolor'] = 'white'
 
 # Get the query templates
 import sys
-sys.path.append('../utils') 
+sys.path.append('../utils')
 from vessel_queries import *
 
 seen_table = "proj_global_sar.detections_24_w_zeroes_v20230219"
@@ -351,7 +351,7 @@ ax.set_ylim(0,2300)
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b'))
 for label in ax.get_xticklabels(which='major'):
     label.set(rotation=30, horizontalalignment='right')
-plt.savefig("figures/WNorthKoreaFishing.png",bbox_inches='tight',dpi=300)
+plt.savefig("./WNorthKoreaFishing.png",bbox_inches='tight',dpi=300)
 # plt.legend()
 # plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
 # plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)

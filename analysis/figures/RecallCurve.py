@@ -188,7 +188,7 @@ plt.xlim(0,200)
 plt.legend(frameon=False)
 plt.xlabel("Length, m")
 plt.ylabel("Fraction detected")
-plt.savefig("figures/recall.png")
+plt.savefig("./recall.png")
 
 
 df.matched3.sum()

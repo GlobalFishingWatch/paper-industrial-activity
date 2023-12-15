@@ -7,9 +7,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.2
+#       jupytext_version: 1.13.8
 #   kernelspec:
-#     display_name: rad
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
@@ -24,10 +24,10 @@ import seaborn as sns
 sns.set_theme(style="whitegrid")
 
 # %%
-oil_bplot = pd.read_csv('../../prj-global-sar-analysis/data/infra_barplot_oil_v20230816.csv')
+oil_bplot = pd.read_csv('../data/infra_barplot_oil_v20230816.csv')
 
 # %%
-wind_bplot = pd.read_csv('../../prj-global-sar-analysis/data/infra_barplot_wind_v20230816.csv')
+wind_bplot = pd.read_csv('../data/infra_barplot_wind_v20230816.csv')
 
 # %%
 oil_bplot = oil_bplot[:15]

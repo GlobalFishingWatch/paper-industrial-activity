@@ -23,8 +23,9 @@
 #  - by quarter
 #  - by 24 day period
 #  - then, ambitiously, by 24 day period *with a moving window* -- this is important to create the smooth curve for figure 4
-
-from prj_global_sar_analysis.bigquery_helper_functions import (
+import sys
+sys.path.append('../utils')
+from bigquery_helper_functions import (
     update_table_description,
     query_to_table
 )

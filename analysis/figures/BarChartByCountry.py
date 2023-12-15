@@ -44,7 +44,7 @@ import seaborn as sns
 
 # %%
 import sys
-sys.path.append('../utils') 
+sys.path.append('../utils')
 from vessel_queries import *
 
 
@@ -257,7 +257,7 @@ axs[1].tick_params(axis='both', which='major', labelsize=14)
 plt.tight_layout()
 # import matplotlib.pyplot as plt
 
-plt.savefig('figures/barchart_fishing_nonfishing_eez.png', bbox_inches="tight", dpi = 300, facecolor='white')
+plt.savefig('./barchart_fishing_nonfishing_eez.png', bbox_inches="tight", dpi = 300, facecolor='white')
 plt.show()
 
 

@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -39,6 +39,7 @@ import pycountry
 from pycountry_convert import (
     country_alpha2_to_continent_code,
     country_name_to_country_alpha2,
+    country_alpha2_to_country_name,
 )
 
 warnings.filterwarnings("ignore")
@@ -78,7 +79,7 @@ def get_country(x):
 # -
 
 # NOTE: feather can store date objects, CSV dates need to be parsed (str -> date)
-f = "../data/24day_rolling_augmented_v20230816.csv.zip"
+f = "../data/24day_rolling_augmented_v20230816.csv"
 df1 = pd.read_csv(f, parse_dates=["rolling_date"])
 
 # Crop beguining and end data points
@@ -648,7 +649,7 @@ fig.align_labels()
 
 if SAVE:
     plt.savefig(
-        "figures/fishing_nonfishing_series_v3.jpg",
+        "fishing_nonfishing_series_v3.jpg",
         bbox_inches="tight",
         pad_inches=0.1,
         dpi=300
@@ -1046,7 +1047,7 @@ fig.align_labels()
 
 if SAVE:
     plt.savefig(
-        "figures/fishing_nonfishing_series_v3.png",
+        "./fishing_nonfishing_series_v3.png",
         bbox_inches="tight",
         pad_inches=0.1,
         dpi=300

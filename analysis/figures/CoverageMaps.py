@@ -32,7 +32,7 @@ import cmocean
 # -
 
 import sys
-sys.path.append('../utils') 
+sys.path.append('../utils')
 from eliminate_ice_string import *
 eliminated_locations = eliminate_ice_string()
 
@@ -100,7 +100,7 @@ with psm.context(psm.styles.light):
 #         origin="lower",
 #     )
 # plt.title("Sentinel-1 Overpasses, 2017-2021",fontsize=15)
-plt.savefig(f"figures/overpasses_2017_2021_light_deep.png",dpi=300, bbox_inches="tight")
+plt.savefig(f"./overpasses_2017_2021_light_deep.png",dpi=300, bbox_inches="tight")
 # -
 
 
