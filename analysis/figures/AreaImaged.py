@@ -30,12 +30,17 @@ plt.rcParams['figure.facecolor'] = 'white'
 plt.rcParams['axes.facecolor'] = 'white'
 # %matplotlib inline
 
-q = '''SELECT 
-_partitiontime date,
-sum(cos(lat_index/10*3.14/180)*111*111*.1*.1) area
-FROM `project-id.proj_sentinel1_v20210924.detect_foot_raster_10` 
-group by date order by date'''
-df = pd.read_gbq(q)
+# q = '''SELECT 
+# _partitiontime date,
+# sum(cos(lat_index/10*3.14/180)*111*111*.1*.1) area
+# FROM `world-fishing-827.proj_sentinel1_v20210924.detect_foot_raster_10` 
+# group by date order by date'''
+# gf = pd.read_gbq(q)
+df = pd.read_csv('../data/detect_foot_raster_10.csv.zip')
+
+
+
+
 
 # +
 fig, ax = plt.subplots(figsize=(8,4))
