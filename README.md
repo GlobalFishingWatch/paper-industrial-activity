@@ -1,9 +1,8 @@
-## Code
-
 Public repository for the code developed in the paper  
 "Satellite mapping reveals extensive industrial activity at sea"  
-by [Global Fishing Watch](https://globalfishingwatch.org) et al. (2023, Nature).
+by [Global Fishing Watch](https://globalfishingwatch.org) et al. (2024, Nature).
 
+## Code
     .
     ├── README.md   # this file
     ├── LICENSE     # usage and distribution conditions
