@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -30,10 +30,10 @@ predictions_table = '''
     avg(fishing_66) fishing_score_high
   from
     (select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_even_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_even_v5*`
     union all
     select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_odd_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_odd_v5*`
     )
   group by 
     detect_id
@@ -52,7 +52,7 @@ select
   ssvid,
   if(on_fishing_list_known is not null, on_fishing_list_known, on_fishing_list_nn) as on_fishing_list
 from
-  `project-id.{vessel_info_table}`
+  `{vessel_info_table}`
   -- don't do anything with identity spoofing vessels!
   where activity.overlap_hours_multinames < 24
 ),
@@ -79,7 +79,7 @@ detections_table as
     length_m
     
   from
-  `project-id.proj_global_sar.detections_w_overpasses_v20230215`
+  `proj_global_sar.detections_w_overpasses_v20230215`
   where
   -- the following is very restrictive on repeated objects
   repeats_100m_180days_forward < 3 and

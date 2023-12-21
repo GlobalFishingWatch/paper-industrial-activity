@@ -85,13 +85,30 @@ def get_country(x):
 
 
 # %%
+import pandas as pd
+from io import BytesIO
+from zipfile import ZipFile
+
+def read_zip_to_dataframes(zip_file_path):
+    with ZipFile(zip_file_path, 'r') as zip_file:
+        for file_name in zip_file.namelist():
+            if file_name.endswith('.csv'):
+                with zip_file.open(file_name) as csv_file:
+                    csv_content = BytesIO(csv_file.read())
+                    df = pd.read_csv(csv_content)
+                    yield df
+
+
+
+# %%
 # Load data on vessel traffic
 
-data_oil = '../data/infra_vessel_activity_oil_100th_degree_v20230222.feather'
-data_wind = '../data/infra_vessel_activity_wind_100th_degree_v20230222.feather'
+data_oil = '../data/infra_vessel_activity_oil_100th_degree_v20230222.zip'
+data_wind = '../data/infra_vessel_activity_wind_100th_degree_v20230222.csv'
 
-df_oil = pd.read_feather(data_oil, use_threads=True)
-df_wind = pd.read_feather(data_wind, use_threads=True)
+
+df_oil = pd.concat(read_zip_to_dataframes(data_oil), ignore_index=True)
+df_wind = pd.read_csv(data_wind)
 
 df_oil.head()
 
@@ -133,8 +150,8 @@ def print_vessels(dfs, classes):
         d = d[d.visit_hours_sum > 0]
         print(
             f"{val: <10}",
-            f"{d.visit_hours_sum.min().round(4): >10}",
-            f"{d.visit_hours_sum.max().round(1): >10}",
+            f"{round(d.visit_hours_sum.min(), 4): >10}",
+            f"{round(d.visit_hours_sum.max(), 1): >10}",
             f"{d.visit_hours_sum.count(): >10}",
         )
 
@@ -448,7 +465,7 @@ def mouse_event(event):
 
 
 # %%
-# %matplotlib qt
+# %matplotlib inline
 
 SAVE = True
 PLOT1 = True
@@ -660,7 +677,7 @@ with psm.context(psm.styles.light):
                     wspace=0.016,
                     valign=0.5,
                     right_edge=None,
-                    center=False,
+#                     center=False,
                     # formatter="%.2f",
                 )
                 
