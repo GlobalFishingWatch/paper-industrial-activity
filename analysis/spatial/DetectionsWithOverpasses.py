@@ -19,7 +19,7 @@
 
 # +
 import sys
-sys.path.append('../utils') 
+sys.path.append('../utils')
 
 from bigquery_helper_functions import (
     update_table_description,

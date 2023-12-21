@@ -109,7 +109,7 @@ for FIELD in FIELDS:
         plt.plot(j_unique, i_unique, ".", markersize=0.25, markeredgewidth=0)
         plt.plot(j_nonzero, i_nonzero, ".r", markersize=0.25, markeredgewidth=0)
         plt.show()
-        # plt.savefig('figures/grids_to_interpolate.png', dpi=300)
+        # plt.savefig('./grids_to_interpolate.png', dpi=300)
 
     if PLOT:
 
@@ -141,6 +141,6 @@ for FIELD in FIELDS:
                 break
 
         plt.show()
-        # plt.savefig('figures/interpolated_series2.png', dpi=72)
+        # plt.savefig('./interpolated_series2.png', dpi=72)
 
 print('DONE')

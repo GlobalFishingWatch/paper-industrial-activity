@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 scale = 10
 
 import sys
-sys.path.append('../utils') 
+sys.path.append('../utils')
 from vessel_queries import *
 from eliminate_ice_string import *
 eliminated_locations = eliminate_ice_string()

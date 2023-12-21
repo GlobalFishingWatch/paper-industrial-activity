@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -34,122 +34,124 @@ plt.rcParams['figure.facecolor'] = 'white'
 plt.rcParams['axes.facecolor'] = 'white'
 
 # +
-q = '''with 
-vessel_info as (
-select ssvid,
-best.best_length_m,
-from `project-id.gfw_research.vi_ssvid_v20220401`
-where activity.overlap_hours < 24 
--- and registry_info.best_known_length_m is not null
-),
+# q = '''with 
+# vessel_info as (
+# select ssvid,
+# best.best_length_m,
+# from `world-fishing-827.gfw_research.vi_ssvid_v20220401`
+# where activity.overlap_hours < 24 
+# -- and registry_info.best_known_length_m is not null
+# ),
 
 
-definitely_in_scene as 
-(
-select scene_id, ssvid from proj_global_sar.likelihood_inside 
-where prob_inside > .99
-),
+# definitely_in_scene as 
+# (
+# select scene_id, ssvid from proj_global_sar.likelihood_inside 
+# where prob_inside > .99
+# ),
 
 
-extrap as (
-select * from 
-(SELECT 
-ssvid,
-least(abs(delta_minutes1),abs(delta_minutes2)) delta_minutes,
-extract(year from _partitiontime) year,
-st_geogpoint(likely_lon, likely_lat) pos,
-within_footprint_5km,
-within_footprint_1km,
-row_number() over(partition by ssvid, scene_id order by rand()) as row,
- scene_id 
- FROM `project-id.proj_sentinel1_v20210924.detect_foot_ext_ais`
- join definitely_in_scene
- using(ssvid,scene_id)
-  WHERE DATE(_PARTITIONTIME) 
-between 
-"2017-01-01"
-and
-"2021-12-31" 
-and source = "AIS"
-and within_footprint_5km)
-where row = 1
+# extrap as (
+# select * from 
+# (SELECT 
+# ssvid,
+# least(abs(delta_minutes1),abs(delta_minutes2)) delta_minutes,
+# extract(year from _partitiontime) year,
+# st_geogpoint(likely_lon, likely_lat) pos,
+# within_footprint_5km,
+# within_footprint_1km,
+# row_number() over(partition by ssvid, scene_id order by rand()) as row,
+#  scene_id 
+#  FROM `world-fishing-827.proj_sentinel1_v20210924.detect_foot_ext_ais`
+#  join definitely_in_scene
+#  using(ssvid,scene_id)
+#   WHERE DATE(_PARTITIONTIME) 
+# between 
+# "2017-01-01"
+# and
+# "2021-12-31" 
+# and source = "AIS"
+# and within_footprint_5km)
+# where row = 1
 
-),
+# ),
 
-distance_to_closest as 
-(select a.ssvid, a.delta_minutes, a.year, a.within_footprint_5km,
-a.within_footprint_1km,
- scene_id ,
- min(st_distance(a.pos,b.pos)) min_distance_m
- from extrap a
- join
- extrap b
- using(scene_id)
- where a.ssvid != b.ssvid
- group by ssvid, delta_minutes, year, within_footprint_5km, 
- within_footprint_1km, scene_id),
+# distance_to_closest as 
+# (select a.ssvid, a.delta_minutes, a.year, a.within_footprint_5km,
+# a.within_footprint_1km,
+#  scene_id ,
+#  min(st_distance(a.pos,b.pos)) min_distance_m
+#  from extrap a
+#  join
+#  extrap b
+#  using(scene_id)
+#  where a.ssvid != b.ssvid
+#  group by ssvid, delta_minutes, year, within_footprint_5km, 
+#  within_footprint_1km, scene_id),
 
- vessels_in_scenes as (
-SELECT 
-ssvid,
-min_distance_m,
-delta_minutes,
-best_length_m,
-within_footprint_5km,
-within_footprint_1km,
- scene_id 
- FROM distance_to_closest
-join
-vessel_info
-using(ssvid)
-where delta_minutes < 2
-),
+#  vessels_in_scenes as (
+# SELECT 
+# ssvid,
+# min_distance_m,
+# delta_minutes,
+# best_length_m,
+# within_footprint_5km,
+# within_footprint_1km,
+#  scene_id 
+#  FROM distance_to_closest
+# join
+# vessel_info
+# using(ssvid)
+# where delta_minutes < 2
+# ),
 
-match_table as (
-select ssvid, scene_id, presence, score, source
- from `project-id.proj_sentinel1_v20210924.detect_scene_match`
-join
-`project-id.proj_sentinel1_v20210924.detect_scene_pred_*`
-using(detect_id)
-where presence > .7
-and DATE(_PARTITIONTIME) 
-between "2017-01-01" and "2021-12-31"
-and _table_suffix between "20170101" and "20211231"
-)
+# match_table as (
+# select ssvid, scene_id, presence, score, source
+#  from `world-fishing-827.proj_sentinel1_v20210924.detect_scene_match`
+# join
+# `world-fishing-827.proj_sentinel1_v20210924.detect_scene_pred_*`
+# using(detect_id)
+# where presence > .7
+# and DATE(_PARTITIONTIME) 
+# between "2017-01-01" and "2021-12-31"
+# and _table_suffix between "20170101" and "20211231"
+# )
 
 
 
-select 
-case when min_distance_m < 1000 then 
-floor(min_distance_m/100)*100 
-else 1000 end min_distance_m,
-count(*) vessels,
-sum(if(b.ssvid is not null and b.score > 1e-1, 1,0)) matched1,
-sum(if(b.ssvid is not null and b.score > 1e-2, 1,0)) matched2,
-sum(if(b.ssvid is not null and b.score > 1e-3, 1,0)) matched3,
-sum(if(b.ssvid is not null and b.score > 1e0, 1,0)) matched0,
+# select 
+# case when min_distance_m < 1000 then 
+# floor(min_distance_m/100)*100 
+# else 1000 end min_distance_m,
+# count(*) vessels,
+# sum(if(b.ssvid is not null and b.score > 1e-1, 1,0)) matched1,
+# sum(if(b.ssvid is not null and b.score > 1e-2, 1,0)) matched2,
+# sum(if(b.ssvid is not null and b.score > 1e-3, 1,0)) matched3,
+# sum(if(b.ssvid is not null and b.score > 1e0, 1,0)) matched0,
 
-case when best_length_m < 30 
- then floor(best_length_m/2)*2 + 1 
-when best_length_m between 30 and 59.9999999 
-  then floor(best_length_m/4)*4 + 2 
-when best_length_m > 60  and best_length_m < 200
-  then floor(best_length_m/20)*20 + 10 
-when best_length_m >= 200 then 200
-else -20 
-   end length_m
+# case when best_length_m < 30 
+#  then floor(best_length_m/2)*2 + 1 
+# when best_length_m between 30 and 59.9999999 
+#   then floor(best_length_m/4)*4 + 2 
+# when best_length_m > 60  and best_length_m < 200
+#   then floor(best_length_m/20)*20 + 10 
+# when best_length_m >= 200 then 200
+# else -20 
+#    end length_m
 
-from 
-vessels_in_scenes a
-left join
-match_table b
-using(ssvid, scene_id)
-group by length_m, min_distance_m
-order by length_m'''
+# from 
+# vessels_in_scenes a
+# left join
+# match_table b
+# using(ssvid, scene_id)
+# group by length_m, min_distance_m
+# order by length_m'''
 
-df = pd.read_gbq(q)
+# df = pd.read_gbq(q)
 # -
 
+
+df = pd.read_csv('../data/recal_curve.csv.zip')
 
 
 # +
@@ -188,7 +190,7 @@ plt.xlim(0,200)
 plt.legend(frameon=False)
 plt.xlabel("Length, m")
 plt.ylabel("Fraction detected")
-plt.savefig("figures/recall.png")
+plt.savefig("./recall.png")
 
 
 df.matched3.sum()
@@ -200,89 +202,89 @@ df.matched3.sum()
 # # What fraction of vessels in the scenes are more than 1km spaced?
 
 # +
-q = '''with 
-vessel_info as (
-select ssvid,
-best.best_length_m,
-from `project-id.gfw_research.vi_ssvid_v20220401`
-where activity.overlap_hours < 24 
--- and registry_info.best_known_length_m is not null
-),
+# q = '''with 
+# vessel_info as (
+# select ssvid,
+# best.best_length_m,
+# from `world-fishing-827.gfw_research.vi_ssvid_v20220401`
+# where activity.overlap_hours < 24 
+# -- and registry_info.best_known_length_m is not null
+# ),
 
 
-likelihood_in_scene as 
-(
-select prob_inside,scene_id, ssvid from proj_global_sar.likelihood_inside 
-),
+# likelihood_in_scene as 
+# (
+# select prob_inside,scene_id, ssvid from proj_global_sar.likelihood_inside 
+# ),
 
 
-extrap as (
-select * from 
-(SELECT 
-ssvid,
-prob_inside,
-least(abs(delta_minutes1),abs(delta_minutes2)) delta_minutes,
-extract(year from _partitiontime) year,
-st_geogpoint(likely_lon, likely_lat) pos,
-within_footprint_5km,
-within_footprint_1km,
-row_number() over(partition by ssvid, scene_id order by rand()) as row,
- scene_id 
- FROM `project-id.proj_sentinel1_v20210924.detect_foot_ext_ais`
- join likelihood_in_scene
- using(ssvid,scene_id)
-  WHERE DATE(_PARTITIONTIME) 
-between 
-"2017-01-01"
-and
-"2021-12-31" 
-and within_footprint
-and source = "AIS")
-where row = 1
+# extrap as (
+# select * from 
+# (SELECT 
+# ssvid,
+# prob_inside,
+# least(abs(delta_minutes1),abs(delta_minutes2)) delta_minutes,
+# extract(year from _partitiontime) year,
+# st_geogpoint(likely_lon, likely_lat) pos,
+# within_footprint_5km,
+# within_footprint_1km,
+# row_number() over(partition by ssvid, scene_id order by rand()) as row,
+#  scene_id 
+#  FROM `world-fishing-827.proj_sentinel1_v20210924.detect_foot_ext_ais`
+#  join likelihood_in_scene
+#  using(ssvid,scene_id)
+#   WHERE DATE(_PARTITIONTIME) 
+# between 
+# "2017-01-01"
+# and
+# "2021-12-31" 
+# and within_footprint
+# and source = "AIS")
+# where row = 1
 
-),
+# ),
 
-distance_to_closest as 
-(select a.ssvid, a.delta_minutes, a.year, a.within_footprint_5km,
-a.within_footprint_1km,
- scene_id ,
- min(st_distance(a.pos,b.pos)) min_distance_m
- from extrap a
- join
- extrap b
- using(scene_id)
- where a.ssvid != b.ssvid
- group by ssvid, delta_minutes, year, within_footprint_5km, 
- within_footprint_1km, scene_id),
+# distance_to_closest as 
+# (select a.ssvid, a.delta_minutes, a.year, a.within_footprint_5km,
+# a.within_footprint_1km,
+#  scene_id ,
+#  min(st_distance(a.pos,b.pos)) min_distance_m
+#  from extrap a
+#  join
+#  extrap b
+#  using(scene_id)
+#  where a.ssvid != b.ssvid
+#  group by ssvid, delta_minutes, year, within_footprint_5km, 
+#  within_footprint_1km, scene_id),
 
- vessels_in_scenes as (
-SELECT 
-ssvid,
-min_distance_m,
-delta_minutes,
-best_length_m,
-within_footprint_5km,
-within_footprint_1km,
- scene_id 
- FROM distance_to_closest
-join
-vessel_info
-using(ssvid)
-where delta_minutes < 2
-)
+#  vessels_in_scenes as (
+# SELECT 
+# ssvid,
+# min_distance_m,
+# delta_minutes,
+# best_length_m,
+# within_footprint_5km,
+# within_footprint_1km,
+#  scene_id 
+#  FROM distance_to_closest
+# join
+# vessel_info
+# using(ssvid)
+# where delta_minutes < 2
+# )
 
 
-select 
-sum(if(min_distance_m >= 1000,1,0))/count(*) 
-from 
-vessels_in_scenes '''
+# select 
+# sum(if(min_distance_m >= 1000,1,0))/count(*) 
+# from 
+# vessels_in_scenes '''
 
-pd.read_gbq(q)
+
 # -
 
 
+vessels_in_scenes = pd.read_csv('../data/vessels_in_scenes.csv.zip')
 
-
-
+sum(vessels_in_scenes.min_distance_m >= 1000) / len(vessels_in_scenes)
 
 

@@ -66,7 +66,7 @@ plt.subplots_adjust(wspace=0, hspace=0)
 
 if 1:
     plt.savefig(
-        'figures/training_data_maps_v3.jpg',
+        './training_data_maps_v3.jpg',
         dpi=300,
         bbox_inches='tight',
         facecolor='white'

@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -41,7 +41,8 @@ from pathlib import Path
 # ## Map global fishing activity
 
 # %%
-df = pd.read_feather("../data/all_detections_v20230922.feather")
+df = pd.read_feather("../data/all_detections_v20231013.feather")
+
 
 # %%
 df.head()
@@ -541,9 +542,9 @@ with psm.context(psm.styles.light):
                         
 if SAVE:
     if MAIN:
-        name = "figures/fishing_detection_maps_v3.jpg"
+        name = "fishing_detection_maps_v3.jpg"
     else:
-        name = "figures/fishing_detection_maps_sup_v3.jpg"
+        name = "fishing_detection_maps_sup_v3.jpg"
     plt.savefig(name, bbox_inches="tight", pad_inches=0.01, dpi=300)
 
 # %%

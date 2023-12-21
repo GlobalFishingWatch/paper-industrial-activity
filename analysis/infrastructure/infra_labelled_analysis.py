@@ -47,7 +47,7 @@ import pyseas.maps as psm
 
 # %%
 import sys
-sys.path.append('../utils') 
+sys.path.append('../utils')
 from infra_modules import *
 
 elimination_string = messy_areas()

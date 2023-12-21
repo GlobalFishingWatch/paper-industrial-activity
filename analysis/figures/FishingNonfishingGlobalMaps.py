@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -37,8 +37,12 @@ from cmaps import *
 # %matplotlib inline
 
 # %%
+
+# %%
 # use the standard for eliminating ice locations.
-from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
+import sys
+sys.path.append('../utils')
+from eliminate_ice_string import eliminate_ice_string
 
 eliminated_locations = eliminate_ice_string()
 
@@ -571,7 +575,7 @@ with psm.context(psm.styles.light):
 
 if SAVE:
     plt.savefig(
-        "figures/fishing_nonfishing_global_maps_v3.jpg",
+        "./fishing_nonfishing_global_maps_v3.jpg",
         bbox_inches="tight",
         pad_inches=0,
         dpi=300

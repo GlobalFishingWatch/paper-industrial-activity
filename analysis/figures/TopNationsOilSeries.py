@@ -316,7 +316,7 @@ dd2 = get_medians(dd2, quarterly=False)
 # 
 # 
 # if SAVE:
-#     plt.savefig("../figures/oilseries4.png", bbox_inches="tight", pad_inches=0.25, dpi=300)
+#     plt.savefig(".././oilseries4.png", bbox_inches="tight", pad_inches=0.25, dpi=300)
 
 # %%
 # NOTE: It figures out the correct height ratios of (broken) subplots
@@ -393,7 +393,7 @@ plt.tight_layout()
 
 if SAVE:
     plt.savefig(
-        "figures/top_nations_oil_series_v3.jpg",
+        "./top_nations_oil_series_v3.jpg",
         bbox_inches="tight",
         pad_inches=0.1,
         dpi=300

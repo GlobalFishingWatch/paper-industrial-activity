@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -144,7 +144,7 @@ def mouse_event(event):
 
 
 # %%
-# %matplotlib qt
+# %matplotlib inline
 
 SAVE = True
 FONT = 10
@@ -154,7 +154,7 @@ scl = 0.933333333
 # MPAs centroids
 df_mpa = pd.read_csv('../data/no_take_mpas_dark_detections_top15.csv')
 df_mpa = pd.concat([df_mpa, pd.read_csv('../data/galapagos_mpa_boundaries.csv')])
-df_infra = pd.read_feather("../data/offshore_infra_reclassified_w_region.feather")
+df_infra = pd.read_feather("../data/offshore_infra_reclassified_w_regions_v20230816.csv")
 
 geoms = [wkt.loads(s) for s in df_mpa.mpa_boundary_wkt]
 df_mpa['geometry'] = geoms
@@ -418,7 +418,7 @@ with psm.context(psm.styles.light):
 
 if SAVE:
     plt.savefig(
-        "figures/mpa_infra_maps_v3.jpg",
+        "mpa_infra_maps_v3.jpg",
         bbox_inches="tight",
         pad_inches=0.01,
         dpi=300

@@ -25,7 +25,7 @@ import pyperclip
 # use the standard for eliminating ice locations.
 
 import sys
-sys.path.append('../utils') 
+sys.path.append('../utils')
 from eliminate_ice_string import *
 eliminated_locations = eliminate_ice_string()
 # -
