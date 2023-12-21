@@ -33,12 +33,18 @@ mpl.rcParams["axes.spines.top"] = False
 plt.rcParams['figure.facecolor'] = 'white'
 plt.rcParams['axes.facecolor'] = 'white'
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['font.sans-serif'] = "Roboto"
+matplotlib.rcParams['font.family'] = "sans-serif"
+matplotlib.rcParams['figure.dpi'] = 600
+
 # +
 q = '''with 
 vessel_info as (
 select ssvid,
 best.best_length_m,
-from `project-id.gfw_research.vi_ssvid_v20220401`
+from `gfw_research.vi_ssvid_v20220401`
 where activity.overlap_hours < 24 
 -- and registry_info.best_known_length_m is not null
 ),
@@ -62,7 +68,7 @@ within_footprint_5km,
 within_footprint_1km,
 row_number() over(partition by ssvid, scene_id order by rand()) as row,
  scene_id 
- FROM `project-id.proj_sentinel1_v20210924.detect_foot_ext_ais`
+ FROM `proj_sentinel1_v20210924.detect_foot_ext_ais`
  join definitely_in_scene
  using(ssvid,scene_id)
   WHERE DATE(_PARTITIONTIME) 
@@ -107,9 +113,9 @@ where delta_minutes < 2
 
 match_table as (
 select ssvid, scene_id, presence, score, source
- from `project-id.proj_sentinel1_v20210924.detect_scene_match`
+ from `proj_sentinel1_v20210924.detect_scene_match`
 join
-`project-id.proj_sentinel1_v20210924.detect_scene_pred_*`
+`proj_sentinel1_v20210924.detect_scene_pred_*`
 using(detect_id)
 where presence > .7
 and DATE(_PARTITIONTIME) 
@@ -174,9 +180,9 @@ plt.xlabel("length, m")
 plt.ylabel("fraction detected")
 plt.title("recall as a function of length and vessel spacing")
 
-# -
 
-plt.figure(figsize=(8,4),facecolor='white')
+# +
+plt.figure(figsize=(8,4.2),facecolor='white')
 d = df.groupby('length_m').sum()
 d['frac_matched3'] =  d.matched3/d.vessels
 plt.scatter(np.array(d.index.values),np.array(d.frac_matched3.values), label = "all vessels")
@@ -185,11 +191,52 @@ d = df[df.min_distance_m == 1000]
 plt.scatter(d.length_m.values, d.frac_matched3.values, label = "well spaced vessels")
 plt.plot(np.array(d.length_m.values[1:]), np.array(d.frac_matched3.values[1:]))
 plt.xlim(0,200)
-plt.legend(frameon=False)
-plt.xlabel("Length, m")
-plt.ylabel("Fraction detected")
-plt.savefig("figures/recall.png")
+plt.legend(frameon=False,fontsize=12)
+plt.xlabel("Length, m", fontsize=12)
+plt.ylabel("Fraction detected", fontsize=12)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
 
+
+# plt.savefig("figures/recall.jpg")
+
+plt.savefig(
+    "figures/recall.pdf",
+    transparent=True,
+    bbox_inches="tight",
+    pad_inches=0,
+    dpi='figure',
+)
+
+plt.show()
+
+# +
+plt.figure(figsize=(8,4.2),facecolor='white')
+d = df.groupby('length_m').sum()
+d['frac_matched3'] =  d.matched3/d.vessels
+plt.scatter(np.array(d.index.values),np.array(d.frac_matched3.values), label = "all vessels")
+plt.plot(np.array(d.index.values[1:]),np.array(d.frac_matched3.values[1:]))
+d = df[df.min_distance_m == 1000]
+plt.scatter(d.length_m.values, d.frac_matched3.values, label = "well spaced vessels")
+plt.plot(np.array(d.length_m.values[1:]), np.array(d.frac_matched3.values[1:]))
+plt.xlim(0,200)
+plt.legend(frameon=False,fontsize=12)
+plt.xlabel("Length, m", fontsize=12)
+plt.ylabel("Fraction detected", fontsize=12)
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+
+
+plt.savefig(
+    "figures/recall",
+    transparent=True,
+    bbox_inches="tight",
+    pad_inches=0,
+    dpi='figure',
+)
+
+
+# -
 
 df.matched3.sum()
 

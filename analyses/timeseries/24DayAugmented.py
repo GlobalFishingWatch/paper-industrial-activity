@@ -483,10 +483,14 @@ import pandas as pd
 df = pd.read_csv("../data/24day_rolling_augmented_v20230816.csv")
 df.head()
 
+df.rolling_date = df.rolling_date.apply(lambda x: datetime.strptime(x, "%Y-%m-%d"))
+
+
+
 # +
 plt.figure(figsize=(10, 4))
-d = df[df.rolling_date >= date(2017, 1, 13)]
-d = d[d.rolling_date < date(2021, 12, 20)]
+d = df[df.rolling_date >= np.datetime64(date(2017, 1, 13))]
+d = d[d.rolling_date < np.datetime64(date(2021, 12, 20))]
 d = d.groupby("rolling_date").sum().reset_index()
 plt.plot(
     d.rolling_date.values,
@@ -518,8 +522,8 @@ plt.legend()
 
 # +
 plt.figure(figsize=(10, 4))
-d = df[df.rolling_date >= date(2017, 1, 13)]
-d = d[d.rolling_date < date(2021, 12, 20)]
+d = df[df.rolling_date >= np.datetime64(date(2017, 1, 13))]
+d = d[d.rolling_date < np.datetime64(date(2021, 12, 20))]
 d = d.groupby("rolling_date").sum().reset_index()
 plt.plot(
     d.rolling_date.values,
@@ -551,6 +555,59 @@ plt.title("Fraction of fishing vessel activity with AIS")
 # plt.legend()
 # plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
 # plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
+# -
+d['year'] = d.rolling_date.apply(lambda x: x.year)
+d['frac_ais'] = (d.ais_fishing + d.ais_fishing_i) / \
+    (d.dark_fishing + d.dark_fishing_i +d.ais_fishing + d.ais_fishing_i )
+d = d[['frac_ais','year']].groupby('year').mean()
+
+
+for index, row in d.iterrows():
+    print(index,"\t",row.frac_ais)
+
+# +
+plt.figure(figsize=(10, 4))
+d = df[df.rolling_date >= np.datetime64(date(2017, 1, 13))]
+d = d[d.rolling_date < np.datetime64(date(2021, 12, 20))]
+d = d.groupby("rolling_date").sum().reset_index()
+plt.plot(
+    d.rolling_date.values,
+    (d.ais_fishing + d.ais_fishing_i)
+    .rolling(3)
+    .median().values / 
+    (d.dark_fishing + d.dark_fishing_i +d.ais_fishing + d.ais_fishing_i )
+    .rolling(3)
+    .median().values
+)
+
+plt.ylim(0,.5)
+# plt.plot(
+#     d.rolling_date.values,
+#     (d.dark_fishing + d.dark_fishing_i)
+#     .rolling(3)
+#     .median().values,
+#     label = 'dark fishing'
+# )
+
+# plt.plot(
+#     d.rolling_date.values,|
+#     (d.ais_fishing + d.ais_fishing_i)
+#     .rolling(3)
+#     .median().values,
+#     label = 'ais fishing'
+# )
+plt.title("Fraction of fishing vessel activity with AIS")
+# plt.legend()
+# plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
+# plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
+# -
+
+
+
+
+
+
+
 # +
 plt.figure(figsize=(10, 4))
 d = df[df.rolling_date >= date(2017, 1, 13)]
@@ -843,5 +900,48 @@ fishing_pandemic/fishing_prepandemic
 nonfishing_prepandemic = d[d.year.isin([2018,2019])].nonfishing.mean()
 nonfishing_pandemic = d[d.year.isin([2020,2021])].nonfishing.mean()
 nonfishing_pandemic/nonfishing_prepandemic
+
+# +
+plt.figure(figsize=(10, 4))
+d = df[(df.include == 1)&(df.eez_iso3!="CHN")]
+d = d.drop(columns=['rolling_date', 'index', 'eez_iso3'])
+d = d.groupby("year").mean().reset_index()
+d["date"] = d.year.apply(lambda x: date(x, 7, 1))
+plt.plot(
+    d.date.values,
+    (d.ais_fishing + d.dark_fishing + d.ais_fishing_i + d.dark_fishing_i).values,
+    label="all fishing",
+)
+plt.plot(
+    d.date.values,
+    (d.ais_nonfishing + d.dark_nonfishing + d.ais_nonfishing_i + d.dark_nonfishing_i).values,
+    label="non fishing",
+)
+
+
+plt.legend()
+# -
+
+d = df[(df.include == 1)]
+d = d.drop(columns=['rolling_date', 'index', 'eez_iso3'])
+d
+
+# +
+d = df[(df.include == 1)]
+d = d.drop(columns=[ 'index', 'eez_iso3'])
+d = d.groupby(["year","rolling_date"]).sum().reset_index()
+d = d.drop(columns=['rolling_date'])
+d = d.groupby(["year"]).mean().reset_index()
+
+
+d['fishing'] = d.ais_fishing + d.dark_fishing + d.ais_fishing_i + d.dark_fishing_i
+d['nonfishing'] = d.ais_nonfishing + d.dark_nonfishing + d.ais_nonfishing_i + d.dark_nonfishing_i
+d
+# -
+
+d2 = d.set_index('year')
+
+
+d2[['fishing','nonfishing']].plot(kind='bar')
 
 

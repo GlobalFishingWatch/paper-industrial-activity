@@ -30,6 +30,14 @@ plt.rcParams['figure.facecolor'] = 'white'
 plt.rcParams['axes.facecolor'] = 'white'
 # %matplotlib inline
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['font.sans-serif'] = "Roboto"
+matplotlib.rcParams['font.family'] = "sans-serif"
+matplotlib.rcParams['figure.dpi'] = 600
+
+
+
 q = '''SELECT 
 _partitiontime date,
 sum(cos(lat_index/10*3.14/180)*111*111*.1*.1) area
@@ -38,17 +46,27 @@ group by date order by date'''
 df = pd.read_gbq(q)
 
 # +
-fig, ax = plt.subplots(figsize=(8,4))
+fig, ax = plt.subplots(figsize=(9,5))
 plt.plot(df.date.values, df.area.rolling(12).mean().values)
 plt.ylim(0,1.5e7)
 # plt.title("Area of ocean imaged each day by Sentinel-1\n12 day rolling average")
-plt.ylabel("Area per day, square km")
+plt.ylabel("Area per day, square km", fontsize=12)
 
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b'))
 for label in ax.get_xticklabels(which='major'):
     label.set(rotation=30, horizontalalignment='right')
 
-plt.savefig("figures/AreaImaged.jpeg",dpi = 300, bbox_inches="tight",facecolor="white")
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+
+# plt.savefig("figures/AreaImaged.jpeg",dpi = 300, bbox_inches="tight",facecolor="white")
+
+plt.savefig("figures/AreaImaged.pdf",
+    transparent=True,
+    bbox_inches="tight",
+    pad_inches=0.1,
+    dpi='figure',
+    facecolor="white")
 # -
 
 plt.figure(figsize=(8,5))

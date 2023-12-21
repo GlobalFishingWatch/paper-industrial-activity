@@ -36,7 +36,7 @@ WITH
 
 
   sat_positions as (select * from
-     `project-id.satellite_positions_v20190208.sentinel_1_positions*`
+     `satellite_positions_v20190208.sentinel_1_positions*`
   where _table_suffix = YYYYMMDD(toDAY()) ),
 
   source_table_distinct as (

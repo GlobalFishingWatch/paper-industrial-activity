@@ -31,6 +31,16 @@ import cartopy.crs as ccrs
 import cmocean
 # -
 
+# mpl.rcParams['pdf.fonttype'] = 42
+# mpl.rcParams['font.sans-serif'] = "Helvetica"
+# mpl.rcParams['font.family'] = "sans-serif"
+# mpl.rcParams['figure.dpi'] = 300
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['font.sans-serif'] = "Roboto"
+matplotlib.rcParams['font.family'] = "sans-serif"
+matplotlib.rcParams['figure.dpi'] = 600
+
 import sys
 sys.path.append('../utils') 
 from eliminate_ice_string import *
@@ -81,13 +91,17 @@ with psm.context(psm.styles.light):
         norm=norm,
         origin="lower",
     )
-    fig.colorbar(
+    cbar = fig.colorbar(
         im,
         ax=ax,orientation="horizontal",
         fraction=0.02,
         aspect=40,
         pad=0.04,
     label = "Overpasses")
+    
+    cbar.ax.tick_params(labelsize=12)
+    cbar.set_label(label = "Overpasses",size=15)
+
     psm.add_eezs()
 
 
@@ -98,7 +112,17 @@ with psm.context(psm.styles.light):
 #         origin="lower",
 #     )
 # plt.title("Sentinel-1 Overpasses, 2017-2021",fontsize=15)
-plt.savefig(f"figures/overpasses_2017_2021_light_deep.jpg",dpi=300, bbox_inches="tight")
+# plt.savefig(f"figures/overpasses_2017_2021_light_deep.jpg",dpi=300, bbox_inches="tight")
+
+plt.savefig(
+    "figures/overpasses_2017_2021_light_deep.pdf",
+    transparent=True,
+    bbox_inches="tight",
+    pad_inches=0,
+    dpi='figure',
+)
+
+plt.show()
 # -
 
 

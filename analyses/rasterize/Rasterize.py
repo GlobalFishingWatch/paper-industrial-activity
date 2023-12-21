@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -21,8 +21,6 @@ import os
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
-def gbq(q):
-    return pd.read_gbq(q, project_id='project-id')
 
 
 def execute_commands_in_parallel(commands):
@@ -60,7 +58,7 @@ with raw as (
     SELECT 
       distinct _table_suffix t 
     FROM 
-      `project-id.{footrpint_vector_table}*`
+      `{footrpint_vector_table}*`
     order by t),
 
 
@@ -81,7 +79,7 @@ where
 
 
 '''
-df = gbq(q)
+df = pd.read_gbq(q)
 
 
 df = df.sort_values('t')
@@ -119,7 +117,7 @@ len(commands)
 # +
 # # !jinja2 raster.sql.j2 -D one_over_cellsize='200' -D YYYY_MM_DD='2015-01-01' -D footrpint_vector_table='proj_sentinel1_v20210924.detect_foot_raw_new_'
 # -
-
+os.system(commands[0])
 
 
 print(command)
@@ -174,7 +172,7 @@ where t not in
 order by t
 
 '''
-df = gbq(q)
+df = pd.read_gbq(q)
 
 
 

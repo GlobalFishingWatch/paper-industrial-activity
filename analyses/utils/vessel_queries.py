@@ -63,6 +63,8 @@ from
 detections_table as
 (
   select
+    scene_id,
+    detect_timestamp,
     detect_lat,
     detect_lon,
     detect_id,
@@ -109,6 +111,8 @@ final_query_static = f'''
   
 final_table as (
 select
+  scene_id,
+  detect_timestamp,
   date_24,
   year,
   detect_lat,

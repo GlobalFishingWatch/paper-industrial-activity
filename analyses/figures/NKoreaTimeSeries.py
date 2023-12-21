@@ -28,6 +28,12 @@ mpl.rcParams["axes.spines.top"] = False
 plt.rcParams['figure.facecolor'] = 'white'
 plt.rcParams['axes.facecolor'] = 'white'
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['font.sans-serif'] = "Roboto"
+matplotlib.rcParams['font.family'] = "sans-serif"
+matplotlib.rcParams['figure.dpi'] = 600
+
 # Get the query templates
 import sys
 sys.path.append('../utils') 
@@ -343,6 +349,65 @@ df["detections"] = (
     + df["dark_nonfishing_i"]
 )
 # +
+fig, ax = plt.subplots(figsize=(10, 4.6),facecolor="white")
+
+
+# for year in range(2017,2022):
+#     plt.plot([datetime(year,5,1),datetime(year,5,1)],[0,2500],"--", color = "#CCCCCC")
+#     plt.plot([datetime(year,8,16),datetime(year,8,16)],[0,2500],"--", color = "#CCCCCC")
+    
+
+d = df[df.rolling_date >= date(2017, 1, 13)]
+d = d[d.rolling_date < date(2021, 12, 20)]
+d = d.groupby("rolling_date").sum().reset_index()
+
+ax.plot(
+    d.rolling_date.values,
+    (d.dark_fishing + d.dark_fishing_i+d.ais_fishing + d.ais_fishing_i)
+    .rolling(3)
+    .mean().values,
+    label = 'nonpublic fishing in western N. Korea EEZ'
+)
+
+
+
+tot_days = (date(2021,12,31) - date(2017,1,1)).days
+
+for year in range(2017,2022):
+    ymin = 0
+    ymax = 2300
+    x1 =  (date(year,5,1) - date(2017,1,1)).days / tot_days
+    x2 = (date(year,8,1) - date(2017,1,1)).days / tot_days
+    ax.axhspan(ymin, ymax, xmin=x1, xmax=x2, alpha=0.15)
+    
+
+
+ax.set_ylabel("Vessels", fontsize=12)
+ax.set_ylim(0,2300)
+ax.set_xlim(date(2017,1,1),date(2021,12,31))
+ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%b'))
+for label in ax.get_xticklabels(which='major'):
+    label.set(rotation=30, horizontalalignment='right')
+    
+plt.xticks(fontsize=11)
+plt.yticks(fontsize=11)
+    
+    
+# plt.savefig("figures/WNorthKoreaFishing.jpg",bbox_inches='tight',dpi=300)
+
+plt.savefig(
+    "figures/WNorthKoreaFishing.pdf",
+    transparent=True,
+    bbox_inches="tight",
+    pad_inches=0,
+    dpi='figure',
+)
+
+# plt.legend()
+# plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
+# plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
+
+# +
 fig, ax = plt.subplots(figsize=(10, 4),facecolor="white")
 
 
@@ -384,7 +449,7 @@ for label in ax.get_xticklabels(which='major'):
     label.set(rotation=30, horizontalalignment='right')
     
 
-plt.savefig("figures/WNorthKoreaFishing.jpg",bbox_inches='tight',dpi=300)
+plt.savefig("figures/WNorthKoreaFishing.jpg",bbox_inches='tight',dpi=300, transparent=True)
 # plt.legend()
 # plt.plot(d.rolling_date, (df2.ais_fishing + df2.dark_fishing + di2.ais_fishing + di2.dark_fishing).rolling(3).median() )
 # plt.plot(d.rolling_date, di2.ais_fishing + di2.dark_fishing)
