@@ -117,7 +117,7 @@ group by
 
 # %%
 # df = pd.read_gbq(q)
-df = pd.read_csv('../data/bar_chart_by_country.csv.zip').head()
+df = pd.read_csv('../data/bar_chart_by_country.csv.zip')
 
 # %%
 df.head()
