@@ -158,7 +158,7 @@ def mouse_event(event):
 df_nonf.category_rand.unique()
 
 # %%
-# # %matplotlib qt
+%matplotlib inline
 
 SAVE = True
 FONT = 10

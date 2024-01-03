@@ -211,7 +211,8 @@ def mouse_event(event):
 
 
 # %%
-# # %matplotlib qt
+
+%matplotlib inline
 
 SAVE = True
 MAIN = False

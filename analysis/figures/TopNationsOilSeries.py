@@ -79,11 +79,11 @@ def get_country(x):
 # %%
 # NOTE: feather can store date objects, CSV dates need to be parsed (str -> date)
 f2 = "../data/infra_global_time_series_v20230816.csv"
-f3 = "../data/infra_poly_time_series_v20230816.csv"
+# f3 = "../data/infra_poly_time_series_v20230816.csv"
 f4 = "../data/infra_eez_time_series_v20230816.csv"
 
 df2 = pd.read_csv(f2, parse_dates=["detect_date"])
-df3 = pd.read_csv(f3, parse_dates=["detect_date"])
+# df3 = pd.read_csv(f3, parse_dates=["detect_date"])
 df4 = pd.read_csv(f4, parse_dates=["detect_date"])
 
 # %%
@@ -111,12 +111,12 @@ def get_date_years(df, time_col=None):
     return df
 
 
-for d in [df2, df3, df4]:
+for d in [df2, df4]:
     d = get_date_years(d, "detect_date")
 
 # %%
 df2 = df2[df2.date_year < 2022]
-df3 = df3[df3.date_year < 2022]
+# df3 = df3[df3.date_year < 2022]
 df4 = df4[df4.date_year < 2022]
 
 # %%
