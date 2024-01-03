@@ -58,8 +58,8 @@ READZIP = False
 # we will filter its size down below.
 
 if READZIP:
-    # df = pd.read_csv("../data/all_detections.csv.zip")
-    df = pd.read_feather("../data/all_detections_v20230922.feather")
+    # df = pd.read_feather("../data/all_detections_v20230922.feather")
+    df = pd.read_csv("../data/industrial_vessels_v20231013.csv.zip")
     df.matched_category.unique()
     df.head()
 
