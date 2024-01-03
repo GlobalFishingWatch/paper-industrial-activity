@@ -152,8 +152,8 @@ FONT = 10
 scl = 0.933333333
 
 # MPAs centroids
-df_mpa = pd.read_csv('../data/no_take_mpas_dark_detections_top15.csv')
-df_mpa = pd.concat([df_mpa, pd.read_csv('../data/galapagos_mpa_boundaries.csv')])
+df_mpa = pd.read_csv('../data/no_take_mpas_dark_detections_top15.csv.zip')
+df_mpa = pd.concat([df_mpa, pd.read_csv('../data/galapagos_mpa_boundaries.csv.zip')])
 df_infra = pd.read_feather("../data/offshore_infra_reclassified_w_regions_v20230816.csv")
 
 geoms = [wkt.loads(s) for s in df_mpa.mpa_boundary_wkt]
