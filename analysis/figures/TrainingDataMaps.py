@@ -50,16 +50,16 @@ def subplot(f_train, f_test, s=0.1, n=331, title='', alpha=1):
 # +
 plt.figure(figsize=(11, 5 * 3))
 
-f_train = '../data/vessels_train.csv'
-f_test = '../data/vessels_test.csv'
+f_train = '../data/vessels_train.csv.zip'
+f_test = '../data/vessels_test.csv.zip'
 subplot(f_train, f_test, s=0.5, n=311, title='Presence and length data')
 
-f_train = '../data/fishing_train.csv'
-f_test = '../data/fishing_test.csv'
+f_train = '../data/fishing_train.csv.zip'
+f_test = '../data/fishing_test.csv.zip'
 subplot(f_train, f_test, s=0.005, n=312, title='Fishing and nonfishing data')
 
-f_train = '../data/infra_train.csv'
-f_test = '../data/infra_test.csv'
+f_train = '../data/infra_train.csv.zip'
+f_test = '../data/infra_test.csv.zip'
 subplot(f_train, f_test, s=1.5, n=313, title='Offshore infrastructure data', alpha=0.75)
 
 plt.subplots_adjust(wspace=0, hspace=0)
