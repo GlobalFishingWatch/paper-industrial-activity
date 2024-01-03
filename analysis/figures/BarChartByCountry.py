@@ -317,7 +317,7 @@ d[['AIS fishing','dark fishing','AIS non-fishing','dark non-fishing']]
 
 # %%
 # data for the bar chart for figure 1
-d.to_csv('../data/vessels_bycontinent_v20230217.csv',index=False)
+# d.to_csv('../data/vessels_bycontinent_v20230217.csv',index=False)
 
 # %%
 n = len(d)
