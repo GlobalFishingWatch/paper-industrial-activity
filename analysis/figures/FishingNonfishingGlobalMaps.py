@@ -7,12 +7,19 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.8
+#       jupytext_version: 1.13.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
+
+# %%
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['font.sans-serif'] = "Arial"
+matplotlib.rcParams['font.family'] = "sans-serif"
+matplotlib.rcParams['figure.dpi'] = 600
 
 # %%
 import numpy as np
@@ -37,12 +44,8 @@ from cmaps import *
 # %matplotlib inline
 
 # %%
-
-# %%
 # use the standard for eliminating ice locations.
-import sys
-sys.path.append('../utils')
-from eliminate_ice_string import eliminate_ice_string
+from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
 
 eliminated_locations = eliminate_ice_string()
 
@@ -51,15 +54,16 @@ eliminated_locations = eliminate_ice_string()
 FONT = 8
 
 palette7 = [
-    "#ca0020",
-    "#f4a582",
-    "#92c5de",
-    "#0571b0",
-    # brighter
-    # "#d7191c",
-    # "#fdae61",
-    # "#abd9e9",
-    # "#2c7bb6",
+    ## Darker
+    # "#ca0020",
+    # "#f4a582",
+    # "#92c5de",
+    # "#0571b0",
+    ## Brighter
+    "#d7191c",
+    "#fdae61",
+    "#abd9e9",
+    "#2c7bb6",
 ]
 
 # red = "#ca0020"
@@ -95,7 +99,7 @@ def map_bivariate(
     norm2 = mpcolors.LogNorm(vmin=a_vmin, vmax=a_vmax, clip=True)
 
     img = psm.add_bivariate_raster(
-        grid_ratio, grid_total, cmap_bi, norm1, norm2, origin="lower", ax=ax
+        grid_ratio, grid_total, cmap_bi, norm1, norm2, origin="lower", ax=ax,
     )
 
     if cbar:
@@ -420,7 +424,7 @@ def get_geometry(fcsv):
     return df_shapes
 
 
-def add_geometry(df_shapes, ax, linewidth=0.1, edgecolor='0.6'):
+def add_geometry(df_shapes, ax, linewidth=0.01, edgecolor='0.9'):
     ax.add_geometries(
         df_shapes.study_area_05,
         crs=psm.identity,
@@ -435,7 +439,7 @@ def mouse_event(event):
 
 
 # %%
-%matplotlib inline
+# # %matplotlib qt
 
 SAVE = True
 
@@ -444,7 +448,7 @@ plt.rcParams["figure.autolayout"] = True
 scl = 0.466666667
 
 fig = plt.figure(figsize=(7, 6 * 3 * scl), constrained_layout=False)
-cid = fig.canvas.mpl_connect('button_press_event', mouse_event)
+# cid = fig.canvas.mpl_connect('button_press_event', mouse_event)
 
 grid = GridSpec(5, 1)
 sub1 = grid[0:2, 0]
@@ -493,6 +497,7 @@ with psm.context(psm.styles.light):
     add_title("Industrial Fishing Vessels", ax1)
     
     ax1.text(.01, .98, 'a', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax1.transAxes)
+    plt.draw()
     
     # ===== Non-fishing ===== #
 
@@ -530,6 +535,7 @@ with psm.context(psm.styles.light):
     add_title("Transport and Energy Vessels", ax2)
     
     ax2.text(.01, .98, 'b', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax2.transAxes)
+    plt.draw()
 
     # ===== Bar charts ===== #
     
@@ -560,6 +566,7 @@ with psm.context(psm.styles.light):
     add_legend(ax3)
     
     ax3.text(0.09, 1.3, 'c', fontsize=FONT+1, weight='bold', ha='left', va='top', transform=ax3.transAxes)
+    plt.draw()
     
     # ===== Percentages ===== #
     
@@ -574,11 +581,17 @@ with psm.context(psm.styles.light):
     print(df_fish.tot_fishing[::-1] / df_fish.tot_fishing.sum())
 
 if SAVE:
+    fig.canvas.draw() 
+    ax1.draw(fig.canvas.renderer)
+    ax2.draw(fig.canvas.renderer)
+    ax3.draw(fig.canvas.renderer)
     plt.savefig(
-        "./fishing_nonfishing_global_maps_v3.jpg",
+        # "figures/fishing_nonfishing_global_maps_v3.jpg",
+        "figures/pdf/Figure_1.pdf",
+        transparent=True,
         bbox_inches="tight",
         pad_inches=0,
-        dpi=300
+        dpi='figure',
     )
 
 # %%
