@@ -586,8 +586,7 @@ if SAVE:
     ax2.draw(fig.canvas.renderer)
     ax3.draw(fig.canvas.renderer)
     plt.savefig(
-        # "figures/fishing_nonfishing_global_maps_v3.jpg",
-        "figures/pdf/Figure_1.pdf",
+        "Figure_1.pdf",
         transparent=True,
         bbox_inches="tight",
         pad_inches=0,
