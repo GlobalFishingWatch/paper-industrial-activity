@@ -115,7 +115,7 @@ where
 st_distance(loc, clust_centr_final) <=100
 qualify row_number() over (partition by detect_id order by dist_to_cluster) = 1)
 
-select * except(dist_to_cluster, clust_centr_final) from assign_clusters'''
+select * except(dist_to_cluster) from assign_clusters'''
 
 # %%
 # run query
@@ -123,28 +123,38 @@ clusters = pd.read_gbq(q)
 
 # %%
 # push cluster locations to gbq
-date = 20230000
+date = 20231201
 clustered_out = f'proj_sentinel1_v20210924.detect_comp_clustered_raw_{date}'
-clusters.to_gbq(clustered_out, if_exists = 'fail')
+# clusters.to_gbq(clustered_out, if_exists = 'fail')
+
+# %%
+clustered_out
+
+# %%
+# input of new detections table that includes new and old detections
+#  to clutster and reclassfiy
+raw_detections = 'proj_sentinel1_v20210924.detect_comp_pred_v2_*'
 
 # %% [markdown]
 # #### 2. Create cluster features and label detections
 
 # %%
 # create cluster features
-q = f'''#################
+q = f'''
+with
+#################
 -- Creating clusters and sub clusters
 #################
 
 -- create midpoint of composite. If it is on the 31, round up to next month
-with
+
 labels as (
 select * except (comp_mid),
 if(extract(day from comp_mid) > 15, date_add(date_trunc(comp_mid, month), interval 1 MONTH), date_trunc(comp_mid, month)) midpoint
 from(
  select *,
  date(date_add(start_time, interval cast((date_diff(end_time, start_time, day)/2) as int64) day)) as comp_mid
-  from `proj_sentinel1_v20210924.detect_comp_pred_v2_*`
+  from `{raw_detections}`
  left join `{clustered_out}`
  using (detect_id))),
 
@@ -276,22 +286,20 @@ left join subcluster_range
 using(cluster_number,subcluster_number)
 left join predictions
 using (cluster_number, start_time, end_time, midpoint)
-left join `proj_sentinel1_v20210924.detect_comp_cluster_locations_v20230810` -- cluster center location
-using (cluster_number)
 )
 
 select distinct * except(clust_centr_final), 
-ST_Y(ST_GEOGFROMTEXT(clust_centr_final)) clust_centr_lat,
-ST_X(ST_GEOGFROMTEXT(clust_centr_final)) clust_centr_lon from features'''
+ST_Y(clust_centr_final) clust_centr_lat,
+ST_X(clust_centr_final) clust_centr_lon from features'''
 
 # %%
 features = pd.read_gbq(q)
 
 # %%
 # push features and detections table to gbq
-date = 20230000
+date = 20231201
 features_out = f'proj_sentinel1_v20210924.detect_comp_clustered_features_{date}'
-features.to_gbq(features_out, if_exists = 'fail')
+# features.to_gbq(features_out, if_exists = 'fail')
 
 # %% [markdown]
 # #### Reclassify using manual review data and classification scheme
@@ -387,17 +395,6 @@ CROSS JOIN
 WHERE
   ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
 
-reviewed_oil_to_unknown as (
-SELECT
-  detect_id,
-FROM
-  features
-CROSS JOIN
-  oil_to_unknown
-WHERE
-  detection_label = 'oil'
-  and ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
-
 not_infra as (
 SELECT
   detect_id,
@@ -419,6 +416,10 @@ WHERE
   ST_CONTAINS(region_geometry, ST_GEOGPOINT(detect_lon, detect_lat))
   AND oil_region IN ('Lake Maracaibo')),
 
+-------------------
+-- these are based on the rule set: if a label is within an area, change to this or that
+-------------------  
+
 oil_in_oil_polygon AS (
 SELECT
   detect_id,
@@ -429,6 +430,17 @@ CROSS JOIN
 WHERE
   detection_label = 'oil'
   AND ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
+
+  reviewed_oil_to_unknown as (
+SELECT
+  detect_id,
+FROM
+  `{features_out}`
+CROSS JOIN
+  oil_to_unknown
+WHERE
+  detection_label = 'oil'
+  and ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
 
 oil_detections_outside_polygon AS (
 SELECT
@@ -524,7 +536,8 @@ WHERE
   AND ST_WITHIN(ST_GEOGPOINT(a.detect_lon, a.detect_lat), c.geometry)
   AND a.detection_label = 'oil'),
 
--- iterative reclassification of wind
+-- fixing oil and other near/ inside a windfarm. Need to apply the 2km condition iteratively 
+-- until there are no detections left to reclassify. In this case, you will pickup detections close to previously reclassified points.
 new_probable_wind AS (
 SELECT
   distinct
@@ -623,16 +636,21 @@ detection_label = pd.read_gbq(q)
 
 # %%
 # push detection reclassification table to gbq
-date = 20230000
-label_reclass = f'0_ttl24h.infra_cluster_label_reclass_v{date}'
-detection_label.to_gbq(label_reclass, if_exists = 'fail')
+date = 20231203
+label_reclass = f'scratch_pete.infra_cluster_label_reclass_v{date}'
+detection_label.to_gbq(label_reclass, if_exists = 'replace')
 
 # %% [markdown]
 # ##### 4. Reclassify cluster detection label
 
 # %%
 q = f'''
+
+
 with
+-----------------------
+-- reclass polygons
+-----------------------
 all_oil_polygons AS (
   SELECT
     ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
@@ -656,13 +674,13 @@ sk_wind AS (
 SELECT
   ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
 FROM
-  proj_global_sar.skytruth_review_wind),
+  `proj_global_sar.skytruth_review_wind`),
 
 sk_other AS (
   SELECT
     ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
   FROM
-    `proj_global_sar.skytruth_review_other_v20230810`),
+    `proj_global_sar.skytruth_review_other_v20231103`),
 
 sk_not_infra AS (
 SELECT
@@ -676,6 +694,50 @@ SELECT
 FROM
   `proj_global_sar.skytruth_review_oil_v20230810`),
 
+oil_to_unknown AS (
+  SELECT
+    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
+  FROM
+  `proj_global_sar.jc_oil_to_unknown_v20231103`),
+
+---------------------------
+-- avg cluster labels
+---------------------------
+cluster_labels as (
+select
+distinct
+  detect_id,
+  midpoint,
+  detect_lon,
+  detect_lat,
+  cluster_number, 
+  clust_centr_lat,
+  clust_centr_lon,
+  avg_cluster_noise,
+  avg_cluster_oil,
+  avg_cluster_other,
+  avg_cluster_wind,
+  case greatest(avg_cluster_wind,avg_cluster_oil,avg_cluster_other,avg_cluster_noise) 
+  when avg_cluster_wind then 'wind'
+  when avg_cluster_oil then 'oil'
+  when avg_cluster_other then 'other'
+  when avg_cluster_noise then 'noise'
+end as cluster_label,
+from `{features_out}`
+left join (
+  select
+  cluster_number,
+  avg(wind) as avg_cluster_wind, 
+  avg(oil) as avg_cluster_oil,
+  avg(other) as avg_cluster_other,
+  avg(noise) as avg_cluster_noise
+  from `{features_out}`
+group by 1)
+using(cluster_number)),
+
+-- ------------------------
+-- -- Create new cluster_number selections using manually reviewed areas for reclassifying clusters labels
+-- ------------------------ 
 reviewed_wind as (
 SELECT
   detect_id,
@@ -710,7 +772,7 @@ not_infra as (
 SELECT
   detect_id,
 FROM
-  `{features_out}`
+  {features_out}
 CROSS JOIN
   sk_not_infra
 WHERE
@@ -720,50 +782,16 @@ maracaibo AS (
 SELECT
   detect_id,
 FROM
-  `{features_out}`
+  {features_out}
 CROSS JOIN
   regions
 WHERE
   ST_CONTAINS(region_geometry, ST_GEOGPOINT(detect_lon, detect_lat))
   AND oil_region IN ('Lake Maracaibo')),
 
----------------------------
--- avg cluster labels
----------------------------
-cluster_labels as (
-select
-distinct
-  detect_id,
-  midpoint,
-  cluster_number, 
-  clust_centr_lat,
-  clust_centr_lon,
-  avg_cluster_noise,
-  avg_cluster_oil,
-  avg_cluster_other,
-  avg_cluster_wind,
-  case greatest(avg_cluster_wind,avg_cluster_oil,avg_cluster_other,avg_cluster_noise) 
-  when avg_cluster_wind then 'wind'
-  when avg_cluster_oil then 'oil'
-  when avg_cluster_other then 'other'
-  when avg_cluster_noise then 'noise'
-end as cluster_label,
-from `{features_out}`
-left join (
-  select
-  cluster_number,
-  avg(wind) as avg_cluster_wind, 
-  avg(oil) as avg_cluster_oil,
-  avg(other) as avg_cluster_other,
-  avg(noise) as avg_cluster_noise
-  from `{features_out}`
-group by 1)
-using(cluster_number)),
--- -- right number of rows
-
--- ------------------------
--- -- Create new detect_id selections using manually reviewed areas for reclassifying clusters labels
--- ------------------------ 
+-------------------
+-- these are based on the rule set: if a label is within an area, change to this or that
+-------------------
 oil_in_oil_polygon_cluster AS (
 SELECT
   detect_id,
@@ -773,7 +801,7 @@ CROSS JOIN
   all_oil_polygons
 WHERE
   cluster_label = 'oil'
-  AND ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
+  AND ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat))),
 
 reviewed_oil_to_unknown_cluster as (
 SELECT
@@ -784,7 +812,8 @@ CROSS JOIN
   oil_to_unknown
 WHERE
   cluster_label = 'oil'
-  and ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
+  and ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat))),
+
 
 oil_detections_outside_polygon_cluster AS (
 SELECT
@@ -809,7 +838,7 @@ CROSS JOIN
   all_oil_polygons
 WHERE
   cluster_label = 'other'
-  AND ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
+  AND ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat))),
 
 other_detections_outside_oil_polygon_cluster AS (
 SELECT
@@ -880,6 +909,8 @@ WHERE
   AND ST_WITHIN(ST_GEOGPOINT(a.clust_centr_lon, a.clust_centr_lat), c.geometry)
   AND a.cluster_label = 'oil'),
 
+
+-- fixing oil and other near/ inside a windfarm. Need to apply the 2km condition iteratively until there are no detections left to reclassify. In this case, you will pickup detections close to previously reclassified points.
 new_probable_wind_cluster AS (
 SELECT
   distinct
@@ -942,12 +973,11 @@ SELECT
 
     noise_detections_cluster as (
   select detect_id from cluster_labels
-  where cluster_label = 'noise'
-),
+  where cluster_label = 'noise'),
 
 -- cluster labels reclassified
 label_reclass_cluster AS (
-select * except(cluster_label_reclassified),
+  select * except(cluster_label_reclassified),
 if(detect_id is null, first_value(cluster_label_reclassified IGNORE NULLS) over (partition by cluster_number order by cluster_number), cluster_label_reclassified) as cluster_label_reclassified
 from
 (
@@ -976,22 +1006,30 @@ from
   FROM
     cluster_labels))
 
-    select distinct * from label_reclass_cluster'''
+    select distinct * from label_reclass_cluster
+'''
 
 # %%
 clust_label = pd.read_gbq(q)
 
 # %%
 # push cluster detection reclassification table to gbq
-date = 20231023
-clust_label_reclass = f'0_ttl24h.infra_reclass_clusters_v{date}'
-clust_label.to_gbq(clust_label_reclass, if_exists = 'fail')
+date = 20231203
+clust_label_reclass = f'scratch_pete.infra_reclass_clusters_v{date}'
+clust_label.to_gbq(clust_label_reclass, if_exists = 'replace')
+
+# %%
+clust_label_reclass
 
 # %% [markdown]
 # ##### 5. Reclassified subcluster detection label, and assemble final table
 
 # %%
 q = f'''with
+
+-----------------------
+-- reclass polygons
+-----------------------
 all_oil_polygons AS (
   SELECT
     ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
@@ -1021,7 +1059,7 @@ sk_other AS (
   SELECT
     ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
   FROM
-    `proj_global_sar.skytruth_review_other_v20230810`),
+    `proj_global_sar.skytruth_review_other_v20231103`),
 
 sk_not_infra AS (
 SELECT
@@ -1035,63 +1073,16 @@ SELECT
 FROM
   `proj_global_sar.skytruth_review_oil_v20230810`),
 
-reviewed_wind as (
-SELECT
-  detect_id,
-FROM
-  `{features_out}`
-CROSS JOIN
-  sk_wind
-WHERE
-  ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
-
-reviewed_oil as (
-SELECT
-  detect_id,
-FROM
-  `{features_out}`
-CROSS JOIN
-  sk_oil
-WHERE
-  ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
-
-reviewed_other as (
-SELECT
-  detect_id,
-FROM
-  `{features_out}`
-CROSS JOIN
-  sk_other
-WHERE
-  ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
-
-not_infra as (
-SELECT
-  detect_id,
-FROM
-  `{features_out}`
-CROSS JOIN
-  sk_not_infra
-WHERE
-  ST_CONTAINS(geometry, ST_GEOGPOINT(detect_lon, detect_lat)) ),
-
-maracaibo AS (
-SELECT
-  detect_id,
-FROM
-  `{features_out}`
-CROSS JOIN
-  regions
-WHERE
-  ST_CONTAINS(region_geometry, ST_GEOGPOINT(detect_lon, detect_lat))
-  AND oil_region IN ('Lake Maracaibo')),
-
+oil_to_unknown AS (
+  SELECT
+    ST_GEOGFROMTEXT(geometry, make_valid => TRUE) AS geometry
+  FROM
+  `proj_global_sar.jc_oil_to_unknown_v20231103`),
 
 ----------------------
 -- avg subcluster labels
 -- do it all over again for subclusters
 ---------------------
-
 subcluster_labels as (
 select
 distinct
@@ -1111,7 +1102,7 @@ distinct
   when avg_subcluster_other then 'other'
   when avg_subcluster_noise then 'noise'
 end as subcluster_label,
-from `{features_out}`
+from {features_out}
 left join (
   select
   cluster_number,
@@ -1120,12 +1111,69 @@ left join (
   avg(oil) as avg_subcluster_oil,
   avg(other) as avg_subcluster_other,
   avg(noise) as avg_subcluster_noise
-  from `{features_out}`
+  from {features_out}
 group by 1,2)
 using(cluster_number, subcluster_number)),
 
+-- ------------------------
+-- -- Create new cluster_number selections using manually reviewed areas for reclassifying clusters labels
+-- ------------------------ 
+reviewed_wind as (
+SELECT
+  detect_id,
+FROM
+  {features_out}
+CROSS JOIN
+  sk_wind
+WHERE
+  ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
+
+reviewed_oil as (
+SELECT
+  detect_id,
+FROM
+  {features_out}
+CROSS JOIN
+  sk_oil
+WHERE
+  ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
+
+reviewed_other as (
+SELECT
+  detect_id,
+FROM
+  {features_out}
+CROSS JOIN
+  sk_other
+WHERE
+  ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
+
+not_infra as (
+SELECT
+  detect_id,
+FROM
+  {features_out}
+CROSS JOIN
+  sk_not_infra
+WHERE
+  ST_CONTAINS(geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat)) ),
+
+maracaibo AS (
+SELECT
+  detect_id,
+FROM
+  {features_out}
+CROSS JOIN
+  regions
+WHERE
+  ST_CONTAINS(region_geometry, ST_GEOGPOINT(clust_centr_lon, clust_centr_lat))
+  AND oil_region IN ('Lake Maracaibo')),
+
 ------------------------
--- Create new detect_id selections using manually reviewed areas for reclassifying subclusters labels
+-- these are based on the rule set: if a subsubcluster label is within an area, change to this or that
+-- so in this case we grab the detect_id rather than subcluster_number. For the manually reviewed ones, we can just say whatever
+-- is associated with a subcluster is this or that. For these, we rely on the different subsubcluster labels in a subcluster, so 
+-- we have to select the detect id.
 ------------------------ 
 oil_in_oil_polygon_subcluster AS (
 SELECT
@@ -1310,11 +1358,11 @@ SELECT
 
 #subcluster labels reclassified
 label_reclass_subcluster AS (
-  select * except(subcluster_label_reclassified),
+select * except(subcluster_label_reclassified),
 --fix that the null detect_id aren't captured in the subqueries because there is no detect_id, so they need to get the reclass label of the other detections in subcluster
 if(detect_id is null, first_value(subcluster_label_reclassified IGNORE NULLS) over (partition by cluster_number, subcluster_number order by subcluster_number), subcluster_label_reclassified) as subcluster_label_reclassified
 from
-(
+  (
   SELECT
     *,
     CASE
@@ -1334,7 +1382,7 @@ from
       WHEN detect_id in (select detect_id from noise_detections_subcluster) THEN 'noise'
       WHEN detect_id is null THEN null -- these are filled in date gaps. Assign this most common value of cluster above
     ELSE
-    'unknown'
+    'start'
   END
     AS subcluster_label_reclassified, 
   FROM
@@ -1349,14 +1397,14 @@ wind,
 oil,
 other,
 noise,
-detect_lon,
-detect_lat,
+a.detect_lon,
+a.detect_lat,
 start_time,
 end_time,
 a.midpoint,
-cluster_number,
+a.cluster_number,
 cluster_detections,
-subcluster_number,
+a.subcluster_number,
 subcluster_detections,
 cluster_start_date,
 cluster_end_date,
@@ -1374,22 +1422,30 @@ subcluster_label,
 -- incorporate final aton osm edits
 if (new_reclass_label is null, subcluster_label_reclassified, new_reclass_label) subcluster_label_reclassified
 from `{label_reclass}` a
-left join `{clust_label_reclass}`
-using(cluster_number)
-left join label_reclass_subcluster
-using(cluster_number, subcluster_number)
-left join (select cluster_number, new_reclass_label from `proj_global_sar.infra_reclass_points_aton_osm_jc`)
-using(cluster_number))
+left join `{clust_label_reclass}` b
+on (a.cluster_number = b.cluster_number)
+left join label_reclass_subcluster c
+on (a.cluster_number = c.cluster_number and a.subcluster_number = c.subcluster_number)
+left join (select cluster_number, new_reclass_label from `proj_global_sar.infra_reclass_points_aton_osm_jc`) d
+on(a.cluster_number = d.cluster_number))
 
 select distinct *
 from final
 order by cluster_number, subcluster_number, midpoint'''
 
 # %%
+print(q)
+
+# %%
 final = pd.read_gbq(q)
 
 # %%
 # push final reclassification table to gbq
-date = 20230000
-final_reclassification = f'proj_sentinel1_v20210924.detect_comp_pred_clustered_reclassified_v{date}'
-final.to_gbq(final_reclassification, if_exists = 'fail')
+date = 20231203
+final_reclassification = f'scratch_pete.detect_comp_pred_clustered_reclassified_v{date}'
+final.to_gbq(final_reclassification, if_exists = 'replace')
+
+# %%
+final_reclassification
+
+# %%
