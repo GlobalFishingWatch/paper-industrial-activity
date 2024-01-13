@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -27,6 +27,7 @@ import pyperclip
 import sys
 sys.path.append('../utils')
 from eliminate_ice_string import *
+from proj_id import project_id
 eliminated_locations = eliminate_ice_string()
 # -
 
@@ -101,7 +102,7 @@ footprints as
   round((lat_index/200+1/400)/0.01)*0.01) as gridcode,
   sum(overpasses) overpasses, 
 FROM 
-  `project-id.proj_global_sar.overpasses_200_by_year_filtered_v20220508`
+  `proj_global_sar.overpasses_200_by_year_filtered_v20220508`
 where 
   year between 2017 and 2021 
   {e}
@@ -111,7 +112,7 @@ having overpasses >= 30
 
 regions as 
 (SELECT eez , 
-gridcode FROM `project-id.pipe_static.spatial_measures_20201105` 
+gridcode FROM `pipe_static.spatial_measures_20201105` 
 cross join unnest( regions.eez) as eez
 
 ),
@@ -198,10 +199,10 @@ predictions_table as
     avg(fishing_66) fishing_score_high
   from
     (select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_even_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_even_v5*`
     union all
     select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_odd_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_odd_v5*`
     )
   group by 
     detect_id
@@ -212,7 +213,7 @@ depth_table as (
 select 
   elevation_m, detect_id 
 from 
-  `project-id.proj_global_sar.detections_w_features_v20220812`
+  `proj_global_sar.detections_w_features_v20220812`
 ),
 
 vessel_info as (
@@ -220,7 +221,7 @@ select
   ssvid,
   if(on_fishing_list_known is not null, on_fishing_list_known, on_fishing_list_nn) as on_fishing_list
 from
-   `project-id.gfw_research.vi_ssvid_v20221001`
+   `gfw_research.vi_ssvid_v20221001`
   -- don't do anything with identity spoofing vessels!
   where activity.overlap_hours_multinames < 24
 ),
@@ -228,7 +229,7 @@ from
 regions as (
   SELECT 
     eez , 
-    gridcode FROM `project-id.pipe_static.spatial_measures_20201105` 
+    gridcode FROM `pipe_static.spatial_measures_20201105` 
 cross join unnest( regions.eez) as eez
 
 ),
@@ -252,7 +253,7 @@ detections_table as
   date_24,
   7.4e-6 as dd_perkm2
   from
-  `project-id.proj_global_sar.detections_w_overpasses_v20230215`
+  `proj_global_sar.detections_w_overpasses_v20230803`
 
   where
   -- the following is very restrictive on repeated objects
@@ -269,7 +270,9 @@ detections_table as
   -- our cutoff for noise -- this could be adjusted down, but makes
   -- very little difference between .5 and .7
   and presence > .7
- {eliminated_locations}
+  and not close_to_infra
+  and not potential_ambiguity
+  {eliminated_locations}
  and not in_road_doppler
   
   ),
@@ -350,7 +353,7 @@ SELECT
 lat_index,
 lon_index,
 sum(overpasses) as overpasses
- FROM `project-id.proj_sentinel1_v20210924.detect_foot_raster_10` 
+ FROM `proj_sentinel1_v20210924.detect_foot_raster_10` 
  WHERE DATE(_PARTITIONTIME) between "2017-01-01" and "2021-12-31"
  group by lat_index, lon_index
  having overpasses >= 30),
@@ -509,7 +512,7 @@ df.area_fish_under_200m_10day.sum()/df.area_km2_under200_imaged.sum()
 
 # What is the total number of fishing vessels per km2 in areas under 200m
 # by continent?
-d = df.groupby("continent").sum()
+d = df[['fishing_under_200','area_km2_under200_imaged','continent']].groupby("continent").sum()
 d['concentration_200'] = d.fishing_under_200/d.area_km2_under200_imaged
 d['concentration_200']
 
@@ -551,10 +554,10 @@ df[df.continent=='Asia'].fishing.sum()/df.fishing.sum()
 
 
 
-# What fraction of fishing is under 20 meters in depth?
+# What fraction of fishing is under 200 meters in depth?
 df.fishing_under_200.sum()/df.fishing.sum()
 
-# What fraction of nonfishing is under 20 meters in depth?
+# What fraction of nonfishing is under 200 meters in depth?
 df.nonfishing_under_200.sum()/df.nonfishing.sum()
 
 # # Analysis for North Korea by Year
@@ -582,7 +585,7 @@ footprints as
   round((lat_index/200+1/400)/0.01)*0.01) as gridcode,
   sum(overpasses) overpasses, 
 FROM 
-  `project-id.proj_global_sar.overpasses_200_by_year_filtered_v20220508`
+  `{project_id}.proj_global_sar.overpasses_200_by_year_filtered_v20220508`
 where 
   year between 2017 and 2021 
   {e}
@@ -593,7 +596,7 @@ having overpasses >= 30
 regions as 
 ( select * from 
   (SELECT eez , 
-    gridcode FROM `project-id.pipe_static.spatial_measures_20201105` 
+    gridcode FROM `{project_id}.pipe_static.spatial_measures_20201105` 
     cross join unnest( regions.eez) as eez)
   where eez = '8328' -- only north korea
 ),
@@ -672,10 +675,10 @@ predictions_table as
     avg(fishing_66) fishing_score_high
   from
     (select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_even_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_even_v5*`
     union all
     select detect_id, fishing_33, fishing_50, fishing_66 from 
-    `project-id.proj_sentinel1_v20210924.fishing_pred_odd_v5*`
+    `proj_sentinel1_v20210924.fishing_pred_odd_v5*`
     )
   group by 
     detect_id
@@ -686,7 +689,7 @@ depth_table as (
 select 
   elevation_m, detect_id 
 from 
-  `project-id.proj_global_sar.detections_w_features_v20220812`
+  `proj_global_sar.detections_w_features_v20220812`
 ),
 
 vessel_info as (
@@ -694,7 +697,7 @@ select
   ssvid,
   if(on_fishing_list_known is not null, on_fishing_list_known, on_fishing_list_nn) as on_fishing_list
 from
-   `project-id.gfw_research.vi_ssvid_v20221001`
+   `gfw_research.vi_ssvid_v20221001`
   -- don't do anything with identity spoofing vessels!
   where activity.overlap_hours_multinames < 24
 ),
@@ -702,7 +705,7 @@ from
 regions as (
  select * from  (SELECT 
     eez, 
-    gridcode FROM `project-id.pipe_static.spatial_measures_20201105` 
+    gridcode FROM `pipe_static.spatial_measures_20201105` 
 cross join unnest( regions.eez) as eez
 )  where eez = '8328' -- only north korea
 
@@ -729,7 +732,7 @@ detections_table as
   date_24,
   7.4e-6 as dd_perkm2
   from
-  `project-id.proj_global_sar.detections_w_overpasses_v20230215`
+  `proj_global_sar.detections_w_overpasses_v20230803`
 
   where
   -- the following is very restrictive on repeated objects
@@ -746,6 +749,8 @@ detections_table as
   -- our cutoff for noise -- this could be adjusted down, but makes
   -- very little difference between .5 and .7
   and presence > .7
+  and not close_to_infra  
+  and not potential_ambiguity
  {eliminated_locations}
  -- eliminate points near roads that could be trucks
  and not in_road_doppler
@@ -834,7 +839,7 @@ SELECT
 lat_index,
 lon_index,
 sum(overpasses) as overpasses
- FROM `project-id.proj_sentinel1_v20210924.detect_foot_raster_10` 
+ FROM `proj_sentinel1_v20210924.detect_foot_raster_10` 
  WHERE DATE(_PARTITIONTIME) between "2017-01-01" and "2021-12-31"
  group by lat_index, lon_index
  having overpasses >= 30),
@@ -880,15 +885,17 @@ d.sort_values(['eez_region','year'])
 
 
 # how many dark vessels per 1000 km2 in 2017-2019?
-dark_fishing = d[(d.eez_region=='west')&(d.year.isin([2017,2018,2019]))].mean().dark_fishing
+dark_fishing = d[(d.eez_region=='west')&(d.year.isin([2017,2018,2019]))].dark_fishing.mean()
 area = df_area_nk[df_area_nk.eez_region=='west']['area_km2_imaged'].values[0]
 dark_fishing/area*1000
 
 # how many dark vessels per 1000 km2 in 2020-2021?
-dark_fishing = d[(d.eez_region=='west')&(d.year.isin([2020,2021]))].mean().dark_fishing
+dark_fishing = d[(d.eez_region=='west')&(d.year.isin([2020,2021]))].dark_fishing.mean()
 area = df_area_nk[df_area_nk.eez_region=='west']['area_km2_imaged'].values[0]
 dark_fishing/area*1000
 
 
+
+df.columns
 
 

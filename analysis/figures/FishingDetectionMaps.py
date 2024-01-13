@@ -206,18 +206,21 @@ def scatter(x, y, c='r', s=1, ax=None, z=10):
     )
     return ax
 
+# %%
 
 def mouse_event(event):
     print(f"{event.xdata:.0f}, {event.ydata:.0f}")
 
-
 # %%
 
-%matplotlib inline
+# %matplotlib inline
 
 SAVE = True
 MAIN = False
 FONT = 10
+
+
+
 
 scl = 0.933333333
 

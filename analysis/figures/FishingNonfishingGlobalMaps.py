@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.6
+#       jupytext_version: 1.13.8
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -45,7 +45,9 @@ from cmaps import *
 
 # %%
 # use the standard for eliminating ice locations.
-from prj_global_sar_analysis.eliminate_ice_string import eliminate_ice_string
+import sys
+sys.path.append('../utils')
+from eliminate_ice_string import eliminate_ice_string
 
 eliminated_locations = eliminate_ice_string()
 
@@ -150,9 +152,9 @@ scale = 5
 # Load fishing data
 # df = pd.read_csv('../data/raster_10th_degree_v20230217.csv.zip')
 # df = pd.read_csv('../data/raster_5th_degree_v20230218.csv.zip')
-# df_bars = pd.read_csv('../data/vessels_bycontinent_v20230217.csv')
 df = pd.read_feather('../data/raster_5th_degree.feather')
 df_bars = pd.read_csv('../data/vessels_bycontinent_v20230803.csv')
+sorted(df_bars.columns)
 
 # %%
 df.head()
@@ -437,6 +439,8 @@ def add_geometry(df_shapes, ax, linewidth=0.01, edgecolor='0.9'):
 def mouse_event(event):
     print('{}, {}'.format(round(event.xdata, 0), round(event.ydata, 0)))
 
+
+# %%
 
 # %%
 # # %matplotlib qt

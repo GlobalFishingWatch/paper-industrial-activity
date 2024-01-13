@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -37,6 +37,10 @@ from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import subprocess
+
+import sys
+sys.path.append('../utils') 
+from proj_id import project_id
 
 # ## check that all tables where made
 
@@ -71,7 +75,7 @@ for table in tables:
 ## create date range to run
 
 the_dates = np.arange(
-    datetime(2022, 1, 12),
+    datetime(2017, 1, 1),
     datetime(2022, 1, 12) + timedelta(days=1),
     timedelta(days=1),
 ).astype(datetime)
@@ -104,7 +108,7 @@ def create_extrap(the_date):
     with scored as 
     (select distinct ssvid, scene_id 
 
-    from `project-id.proj_sentinel1_v20210924.detect_scene_score`
+    from `{project_id}.proj_sentinel1_v20210924.detect_scene_score`
     where date(_partitiontime) = "{the_date:%Y-%m-%d}"
     and score > 1e-9
     ),
@@ -140,7 +144,7 @@ def create_extrap(the_date):
 
     '''
 
-    query_to_table(q, f"project-id.proj_global_sar.extrap_mult${the_date:%Y%m%d}")
+    query_to_table(q, f"{project_id}.proj_global_sar.extrap_mult${the_date:%Y%m%d}")
 
 
 with ThreadPoolExecutor(max_workers=16) as e:
@@ -172,7 +176,7 @@ def create_extrap_single(the_date):
     with scored as 
     (select distinct ssvid, scene_id 
 
-    from `project-id.proj_sentinel1_v20210924.detect_scene_score`
+    from `{project_id}.proj_sentinel1_v20210924.detect_scene_score`
     where date(_partitiontime) = "{the_date:%Y-%m-%d}"
     and score > 1e-9
     ),
@@ -207,7 +211,7 @@ def create_extrap_single(the_date):
 
     '''
 
-    query_to_table(q, f"project-id.proj_global_sar.extrap_mult_single${the_date:%Y%m%d}")
+    query_to_table(q, f"{project_id}.proj_global_sar.extrap_mult_single${the_date:%Y%m%d}")
 
 
 
@@ -732,7 +736,7 @@ def score_day(the_date, value):
     '''
 #     pyperclip.copy(q)
     query_to_table(
-        q, f"project-id.proj_global_sar.score_mult_{value}${the_date:%Y%m%d}"
+        q, f"{project_id}.proj_global_sar.score_mult_{value}${the_date:%Y%m%d}"
     )
 
 
@@ -992,7 +996,7 @@ group by scene_id, ssvid, detect_id, scale, score, original_raster_scale
       '''
 #     pyperclip.copy(q)
     query_to_table(
-        q, f"project-id.proj_global_sar.score_single${the_date:%Y%m%d}"
+        q, f"{project_id}.proj_global_sar.score_single${the_date:%Y%m%d}"
     )
 
 
@@ -1053,7 +1057,7 @@ total_table '''
 
 ### UNCOMMENT TO REGENERATE -- this only needs to be generated once
 # query_to_table(
-#     q, f"project-id.proj_global_sar.frac_diff_lookup"
+#     q, f"{project_id}.proj_global_sar.frac_diff_lookup"
 # )
 # -
 
@@ -1073,7 +1077,7 @@ vessel_info as (
   select 
     ssvid,
     best.best_length_m,
-  from `project-id.gfw_research.vi_ssvid_v20220401`
+  from `{project_id}.gfw_research.vi_ssvid_v20220401`
 ),
 
 sar_length_table as (
@@ -1102,7 +1106,7 @@ old_score as (
   seg_id,
   score as score_ave
 FROM 
-  `project-id.proj_sentinel1_v20210924.detect_scene_score` 
+  `{project_id}.proj_sentinel1_v20210924.detect_scene_score` 
 WHERE DATE(_PARTITIONTIME) = the_date()
 and source = "AIS"
 ),
@@ -1204,24 +1208,31 @@ select
   *,
   ROW_NUMBER() OVER (PARTITION BY detect_id ORDER BY score DESC) as row_number_detect_id_mult,
   ROW_NUMBER() OVER (PARTITION BY concat (ssvid, source), scene_id ORDER BY score DESC) row_number_ssvid_mult,
+
   ROW_NUMBER() OVER (PARTITION BY detect_id ORDER BY score_ave DESC) as row_number_detect_id_ave,
   ROW_NUMBER() OVER (PARTITION BY concat (ssvid, source), scene_id ORDER BY score_ave DESC) row_number_ssvid_ave, 
+
   ROW_NUMBER() OVER (PARTITION BY detect_id ORDER BY score*recall*prob_inside DESC) as row_number_detect_id_mult_recall,
   ROW_NUMBER() OVER (PARTITION BY concat (ssvid, source), scene_id ORDER BY score*recall*prob_inside DESC) row_number_ssvid_mult_recall,
+
   ROW_NUMBER() OVER (PARTITION BY detect_id ORDER BY score_ave*recall*prob_inside DESC) as row_number_detect_id_ave_recall,
   ROW_NUMBER() OVER (PARTITION BY concat (ssvid, source), scene_id ORDER BY score_ave*recall*prob_inside DESC) row_number_ssvid_ave_recall, 
 
   ROW_NUMBER() OVER (PARTITION BY detect_id ORDER BY score*recall*prob_inside*prob_length_match DESC) as row_number_detect_id_mult_recall_len,
   ROW_NUMBER() OVER (PARTITION BY concat (ssvid, source), scene_id ORDER BY score*recall*prob_inside*prob_length_match DESC) row_number_ssvid_mult_recall_len,  
+
   ROW_NUMBER() OVER (PARTITION BY detect_id ORDER BY score*prob_length_match DESC) as row_number_detect_id_mult_len,
   ROW_NUMBER() OVER (PARTITION BY concat (ssvid, source), scene_id ORDER BY score*prob_length_match DESC) row_number_ssvid_mult_len,
+
+  ROW_NUMBER() OVER (PARTITION BY detect_id ORDER BY score_ave*prob_length_match DESC) as row_number_detect_id_ave_len,
+  ROW_NUMBER() OVER (PARTITION BY concat (ssvid, source), scene_id ORDER BY score_ave*prob_length_match DESC) row_number_ssvid_ave_len,
+
 from
-  without_row_numbers '''
+  without_row_numbers  '''
     
     query_to_table(
-        q, f"project-id.proj_global_sar.score_combined${the_date:%Y%m%d}"
+        q, f"{project_id}.proj_global_sar.score_combined${the_date:%Y%m%d}"
     )
-
 
 
 # +
@@ -1432,7 +1443,7 @@ using(detect_id, scene_id) '''
 #     pyperclip.copy(q)
     
     query_to_table(
-        q, f"project-id.{output_table}${the_date:%Y%m%d}"
+        q, f"{project_id}.{output_table}${the_date:%Y%m%d}"
     )
 
 
@@ -1448,6 +1459,11 @@ using(detect_id, scene_id) '''
 # subprocess.call(command.split())
 # command = f'bq mk --time_partitioning_type=DAY proj_global_sar.matched_mult_recall_length'
 # subprocess.call(command.split())
+# command = f'bq mk --time_partitioning_type=DAY proj_global_sar.matched_mult_length'
+# subprocess.call(command.split())
+# command = f'bq mk --time_partitioning_type=DAY proj_global_sar.matched_ave_length'
+# subprocess.call(command.split())
+
 
 
 # -
@@ -1483,3 +1499,21 @@ with ThreadPoolExecutor(max_workers=16) as e:
                    row_number_ssvid_field = "row_number_ssvid_mult_recall_len",
                    output_table = "proj_global_sar.matched_mult_recall_length",
                     scored_table = "proj_global_sar.score_combined")
+
+with ThreadPoolExecutor(max_workers=16) as e:
+    for d in the_dates:
+        e.submit(match_tables, d, score_field = "score*prob_length_match", 
+                   row_number_detect_id = "row_number_detect_id_mult_len",
+                   row_number_ssvid_field = "row_number_ssvid_mult_len",
+                   output_table = "proj_global_sar.matched_mult_length",
+                    scored_table = "proj_global_sar.score_combined")
+
+with ThreadPoolExecutor(max_workers=16) as e:
+    for d in the_dates:
+        e.submit(match_tables, d, score_field = "score_ave*prob_length_match", 
+                   row_number_detect_id = "row_number_detect_id_ave_len",
+                   row_number_ssvid_field = "row_number_ssvid_ave_len",
+                   output_table = "proj_global_sar.matched_ave_length",
+                    scored_table = "proj_global_sar.score_combined")
+
+

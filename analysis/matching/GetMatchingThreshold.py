@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -39,9 +39,11 @@ np.arange(-6,1,.05)
 # +
 q = '''
 
-select sum(if(score_mult_recall_length > pow(10, threshold),1,0)) matches,
-pow(10, threshold) as threshold
-from proj_global_sar.detections_w_overpasses_v20230215
+select 
+  sum(if(score_mult_recall_length > pow(10, threshold),1,0)) matches,
+  pow(10, threshold) as threshold
+from 
+  proj_global_sar.detections_w_overpasses_v20230215
 cross join unnest([-6.00000000e+00, -5.95000000e+00, -5.90000000e+00, -5.85000000e+00,
        -5.80000000e+00, -5.75000000e+00, -5.70000000e+00, -5.65000000e+00,
        -5.60000000e+00, -5.55000000e+00, -5.50000000e+00, -5.45000000e+00,

@@ -6,12 +6,15 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 # ---
+
+import matplotlib.pyplot as plt
+import proplot
 
 # # Likelihood in Scene
 #
@@ -36,6 +39,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pyperclip
 import pandas as pd
+from proj_id import project_id
 
 tables = ''' - proj_global_sar.extrap_scene_edge
  - proj_global_sar.mult_inside_0
@@ -134,7 +138,7 @@ def create_extrap_interesting(the_date):
     using(ssvid)
 
     '''
-    query_to_table(q, f"project-id.proj_global_sar.extrap_scene_edge${the_date:%Y%m%d}")
+    query_to_table(q, f"{project_id}.proj_global_sar.extrap_scene_edge${the_date:%Y%m%d}")
 
 
 
@@ -554,7 +558,7 @@ def prob_inside(the_date, value):
     '''
 #     pyperclip.copy(q)
     query_to_table(
-        q, f"project-id.proj_global_sar.mult_inside_{value}${the_date:%Y%m%d}"
+        q, f"{project_id}.proj_global_sar.mult_inside_{value}${the_date:%Y%m%d}"
     )
 
 # +
@@ -637,7 +641,7 @@ def combine_likelihoods(the_date):
 #     pyperclip.copy(q)
     
     query_to_table(
-        q, f"project-id.proj_global_sar.likelihood_inside${the_date:%Y%m%d}"
+        q, f"{project_id}.proj_global_sar.likelihood_inside${the_date:%Y%m%d}"
     )
 
 # +
@@ -672,14 +676,14 @@ vessel_info as (
   select 
     ssvid,
     best.best_length_m,
-  from `project-id.gfw_research.vi_ssvid_v20220401`
+  from `{project_id}.gfw_research.vi_ssvid_v20220401`
 ),
 
 extrap_raw as (
   select * from 
      (select *, row_number() over (partition by ssvid, scene_id order by rand()) row
        from 
-      `project-id.proj_sentinel1_v20210924.detect_foot_ext_ais`
+      `{project_id}.proj_sentinel1_v20210924.detect_foot_ext_ais`
       WHERE DATE(_PARTITIONTIME) = the_date()
       )
    where row = 1
@@ -789,7 +793,7 @@ likelihood_table
 using(scene_id, ssvid)'''
     
     query_to_table(
-        q, f"project-id.proj_global_sar.expected_recall${the_date:%Y%m%d}"
+        q, f"{project_id}.proj_global_sar.expected_recall${the_date:%Y%m%d}"
     )
 
 
@@ -814,7 +818,7 @@ with locations as
 (
 select * from 
 (select ssvid, scene_id, st_geogpoint(likely_lon, likely_lat) pos, row_number() over (partition by ssvid, scene_id order by rand()) row
-from `project-id.proj_sentinel1_v20210924.detect_foot_ext_ais` 
+from `proj_sentinel1_v20210924.detect_foot_ext_ais` 
 where date(_partitiontime) = "{the_date:%Y-%m-%d}")
 where row = 1),
 
@@ -824,7 +828,7 @@ from
   (select 
     distinct 
     scene_id,footprint_wkt,footprint_wkt_1km  
-    from `project-id.proj_sentinel1_v20210924.detect_foot_raw_{the_date:%Y%m%d}` )
+    from `proj_sentinel1_v20210924.detect_foot_raw_{the_date:%Y%m%d}` )
     where safe.st_geogfromtext(footprint_wkt) is not null or safe.st_geogfromtext(footprint_wkt_1km) is not null
  )
 
@@ -837,7 +841,7 @@ left join
 footprints_table
 using(scene_id)'''
     query_to_table(
-    q, f"project-id.proj_global_sar.likely_loc_in_scene${the_date:%Y%m%d}"
+    q, f"{project_id}.proj_global_sar.likely_loc_in_scene${the_date:%Y%m%d}"
 )
 
 

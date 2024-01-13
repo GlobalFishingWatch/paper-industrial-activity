@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -24,15 +24,12 @@ import pandas as pd
 # Construct a BigQuery client object.
 client = bigquery.Client()
 import sys
-sys.path.append('../analyses_functions') 
+sys.path.append('../utils') 
 
-from bigquery_helper_functions import (
-    update_table_description,
-    query_to_table,
-)
+from bigquery_helper_functions import query_to_table, update_table_description
 # -
 
-q = '''
+q = f'''
 with labeled as
 
 (
@@ -55,7 +52,7 @@ select
   greatest(wind	,oil,	other,	noise) max_value,
   *
 from 
-  `project-id.proj_sentinel1_v20210924.detect_comp_pred_*` 
+  `proj_sentinel1_v20210924.detect_comp_pred_v2_*` 
 )
 
 
@@ -147,7 +144,7 @@ join
 using(h3)
 '''
 
-table_name = 'project-id.proj_global_sar.composite_ids_labeled_v20220627'
+table_name = f'{project_id}.proj_global_sar.composite_ids_labeled_v20230616'
 
 query_to_table(q, table_name)
 

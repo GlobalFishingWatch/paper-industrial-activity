@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: light
 #       format_version: '1.5'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -85,7 +85,7 @@ footprints as
   lat_index,
   sum(overpasses) overpasses, 
 FROM 
-  `project-id.proj_global_sar.overpasses_200_by_year_filtered_v20220508`
+  `proj_global_sar.overpasses_200_by_year_filtered_v20220508`
 where 
   year between 2017 and 2021 
   {e}
@@ -104,6 +104,32 @@ area_km2_imaged/1e6
 # -
 
 df.head()
+
+# +
+d = df.sort_values('detections', ascending=False)
+d['detects_cumsum'] = d.detections.cumsum()
+d['detects_area_cumsum'] = d.area_km.cumsum()
+tot = d.detections.sum()
+
+
+comparison_threshold=.25
+for index, row in d.iterrows():
+    if row.detects_cumsum/tot > comparison_threshold:
+        print(f"{comparison_threshold*100:.1f}% of all activity is in {row.detects_area_cumsum/1e6:.2f}M km2, \
+ {row.detects_area_cumsum/area_km2_imaged*100:.1f}% of area imaged")
+        break
+        
+comparison_threshold = .5
+for index, row in d.iterrows():
+    if row.detects_cumsum/tot> comparison_threshold:
+        print(f"{comparison_threshold*100:.1f}% of all activity is in {row.detects_area_cumsum/1e6:.2f}M km2, \
+ {row.detects_area_cumsum/area_km2_imaged*100:.1f}% of area imaged")
+        break
+
+        
+print(f"100% of fishing is in {d.detects_area_cumsum.max()/1e6:.2f}M km2, \
+ {d.detects_area_cumsum.max()/area_km2_imaged*100:.1f}% of area imaged")
+
 
 # +
 d = df[df.fishing>0].sort_values('fishing', ascending=False)
@@ -189,10 +215,10 @@ print(f"100% of vessels is in {d.vessels_area_cumsum.max()/1e6:.2f}M km2, \
 
 # +
 plt.figure(figsize=(8,4),facecolor="white")
-plt.plot(df.area_km.cumsum()/1e6, df.fishing.cumsum()/df.fishing.sum(),label = 'fishing')
+plt.plot(np.array(df.area_km.cumsum()/1e6), np.array(df.fishing.cumsum()/df.fishing.sum()),label = 'fishing')
 
 d = df.sort_values('nonfishing', ascending=False)
-plt.plot(d.area_km.cumsum()/1e6, d.nonfishing.cumsum()/d.nonfishing.sum(), label = 'nonfishing')
+plt.plot(np.array(d.area_km.cumsum()/1e6), np.array(d.nonfishing.cumsum()/d.nonfishing.sum()), label = 'nonfishing')
 # plt.xlim(0,2e6)
 plt.legend(frameon=False)
 plt.ylabel("fraction of activity")
