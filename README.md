@@ -1,15 +1,21 @@
-## Public repository for the code developed in the paper
+## Paper
 
-Satellite mapping reveals extensive undisclosed industrial activity at sea
+Code repository for the paper "Satellite mapping reveals extensive industrial activity at sea (Paolo et al. 2024, *Nature*)". Open access at <http://www.nature.com/articles/s41586-023-06825-8>
 
-by [Global Fishing Watch](http://#) _et al_.  
-
+## Code
     .
     ├── README.md   # this file
     ├── LICENSE     # usage and distribution conditions
-    ├── analyses    # code and notebooks of analyses and figures
+    ├── analysis    # code and notebooks of analyses and figures
     ├── detector    # code of SAR detection system in Earth Engine
     └── nnets       # code of Deep Learning models and training
+
+## Data
+
+All the data generated and used by these scripts can be downloaded from:
+
+Analysis and Figures: <https://doi.org/10.6084/m9.figshare.24309475>  
+Training and Evaluation: <https://doi.org/10.6084/m9.figshare.24309469>  
 
 ## License
 
