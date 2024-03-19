@@ -1,4 +1,4 @@
-# Spatail Analyses
+# Spatial Analyses
 
 This folder contains notebooks that produces a number of the spatial analyses and figures for the paper, and also produces a number of data files that are then used in figures. These notebooks include:
 
