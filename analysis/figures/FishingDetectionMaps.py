@@ -41,8 +41,7 @@ from pathlib import Path
 # ## Map global fishing activity
 
 # %%
-# df = pd.read_feather("../data/all_detections_v20231013.feather")
-df = pd.read_csv("../data/industrial_vessels_v20231013.csv.zip")
+df = pd.read_csv("../data/industrial_vessels_v20240102.csv.zip")
 
 
 # %%
