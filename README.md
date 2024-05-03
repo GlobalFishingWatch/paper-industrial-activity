@@ -7,6 +7,7 @@ Code repository for the paper "Satellite mapping reveals extensive industrial ac
     ├── README.md   # this file
     ├── LICENSE     # usage and distribution conditions
     ├── analysis    # code and notebooks of analyses and figures
+    ├── data        # links to public data sets
     ├── detector    # code of SAR detection system in Earth Engine
     └── nnets       # code of Deep Learning models and training
 
