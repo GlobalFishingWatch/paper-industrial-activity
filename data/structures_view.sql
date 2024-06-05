@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW `global-fishing-watch.paper_industrial_activity.combined_offshore_infrastructure_v20231106` AS
+CREATE OR REPLACE VIEW `global-fishing-watch.paper_industrial_activity.offshore_infrastructure` AS
 
 WITH structures as (
   SELECT * FROM `global-fishing-watch.paper_industrial_activity.offshore_infrastructure_v20231106`
