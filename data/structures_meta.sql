@@ -35,7 +35,7 @@ with structures as (
     ST_GEOGPOINT(lon, lat) as geometry
   FROM `global-fishing-watch.paper_industrial_activity.offshore_infrastructure_v20231106`
 ),
-sparial_measures as (
+spatial_measures as (
   SELECT
     gridcode, elevation_m, distance_from_shore_m
   FROM `world-fishing-827.pipe_static.spatial_measures_20201105`
